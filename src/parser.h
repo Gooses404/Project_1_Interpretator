@@ -1,0 +1,9 @@
+struct word{
+
+};
+struct operatr{
+
+
+
+};
+
