@@ -4,37 +4,14 @@
 #include <fcntl.h>
 #include <string.h>
 #include "commands.h"
+#include "lexer.h"
 
 int main() {
     int bytes_read = 0 ,size_of_text_of_input = 100;
-    char text_of_input[size_of_text_of_input] , symbol[1];
+    char *text_of_input ;
     while(1){    // global loop for reading input
-        
-        while(1){    // loop for reading one symbol
-        read(0, symbol, 1);
-        if(symbol[0] == '\n'||symbol[0] == EOF || symbol[0] =='\0'){ 
-            // printf("End of input text %s\n", text_of_input);
-            break;
-        }
-        strcpy(text_of_input + bytes_read, symbol);
-        
-        ++bytes_read;      
-        }
-    bytes_read = 0;
-    
-
-
-
-
-
-
-        
-    
-    
-    
-    write(1, text_of_input, strlen(text_of_input));
-    write(1,"\n", 1);
-    lseek(0, strlen(text_of_input), SEEK_SET);
+        text_of_input = read_input();
+        print_tokens(tokenize(text_of_input));
     
     }
     
