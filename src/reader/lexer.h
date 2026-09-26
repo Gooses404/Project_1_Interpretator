@@ -4,7 +4,8 @@
 typedef enum {
     TOKEN_WORD,   
     TOKEN_COMMENT,    
-    TOKEN_PIPE,         
+    TOKEN_PIPE, 
+    TOKEN_ERROR_PIPE,         
     TOKEN_BG,           
     TOKEN_SEQ,          
     TOKEN_AND,          
@@ -12,7 +13,11 @@ typedef enum {
     TOKEN_IN,           
     TOKEN_OUT,          
     TOKEN_APPEND,       
-    // и так далее...   
+    TOKEN_REDIRECT_IN,   
+    TOKEN_REDIRECT_D_OUT,   
+    TOKEN_REDIRECT_OUT, 
+    TOKEN_OPEN_BRACKET,  
+    TOKEN_CLOSE_BRACKET,  
 } TokenType;
 
 
@@ -41,7 +46,7 @@ char* read_input();
 
 void print_tokens(Token *head);
 Token* push_token_from_head(Token *head, TokenType type, const char *value, int value_length);
-
+void destroy_tokens(Token *head);
 
 
 Token* tokenize(const char *text_of_input);

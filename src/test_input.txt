@@ -1,0 +1,2 @@
+" ab \" dc "
+ls sdsad sad asd ads asd a&&b sad asdasda dasd ' dasdasd''sdasd dasd asdasdasdad' /' 

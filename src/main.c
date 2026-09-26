@@ -9,10 +9,15 @@
 int main() {
     int bytes_read = 0 ,size_of_text_of_input = 100;
     char *text_of_input ;
+    Token* head;
     while(1){    // global loop for reading input
-        text_of_input = read_input();
-        print_tokens(tokenize(text_of_input));
-    
+        
+        // printf("START_OF_PROGRAMM\n");
+        // text_of_input = read_input();
+        // head = tokenize(text_of_input);
+        // print_tokens(head);
+        // destroy_tokens(head);
+        lexer_test_mode();
     }
     
     
