@@ -9,6 +9,8 @@
 char* Resize_char(char* input, int size);
 void lexer_test_mode();
 
+char* read_input();
+
 
 
 #endif
