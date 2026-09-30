@@ -22,15 +22,19 @@ bool check_meta(unsigned char c) {
 }
 
 TokenList* tokenize(char *text_of_input){
+    if(text_of_input == NULL){
+        
+    }
     //printf("Tokenize start\n");
     char *current = text_of_input, *start = text_of_input;
     TokenList * list = CreateTokenList(); 
     StateType state = NORMAL;
-    StateType normal_state = NORMAL;
+    StateType normal_state = NORMAL; //нужен чтобы после \ вернуться к правильному состоянию
     int val_len = 0;
+    int is_skiped = 0;
     while(*current != '\0'){
 
-        if (*current == '#' && state == NORMAL  && ( check_meta(*(current - 1)) || current == start)){
+        if (*current == '#' && state == NORMAL  && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
             state = IN_COMMENT;
             //printf("com start");
             // if(current != start){
@@ -39,12 +43,12 @@ TokenList* tokenize(char *text_of_input){
             start = current;
         }
 
-        if(state == IN_COMMENT ){
+        if(state == IN_COMMENT ){ // продолжаем комментарий до конца строки 
             
             if(*current == '\n' || *(current + 1) == '\0'){
                 state = NORMAL;
-                val_len = current - start;
-                list = push_token_from_tail(list, TOKEN_COMMENT, start + 1, val_len);
+                val_len = current - start - 1 ;
+              //  list = push_token_from_tail(list, TOKEN_COMMENT, start + 1, val_len);
             }
             ++current;
             continue;
@@ -82,15 +86,16 @@ TokenList* tokenize(char *text_of_input){
             state = normal_state;
             if(*(current + 1) == '\0'){
                 list = push_token_from_tail(list, TOKEN_WORD, start, current - start +1);
-                ++current;
+                is_skiped = 1;
                 continue;
             }else{
-                ++current;
+                is_skiped = 1;
+                
 
             }
         }
-
-        
+    if(!is_skiped)
+    {    
         if(check_meta(*current) || *(current + 1 ) =='\0' ) // Должны запушить что нибудь               //*current ==' ' || *current == '\t' || *current == '\n' 
             {  
             if((*(current + 1 ) =='\0' ) && !check_meta(*current)){
@@ -199,9 +204,10 @@ TokenList* tokenize(char *text_of_input){
         if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
             start = current;
         }
-        
+    }
         
         ++current;
+        is_skiped =0;
     }
     if(state != NORMAL){
         destroy_tokens(list);
@@ -212,7 +218,12 @@ TokenList* tokenize(char *text_of_input){
     return list;
 }
 void print_tokens(TokenList *list){
+    
    // printf("Start of printing tokns \n");
+    if (list == NULL || list->head == NULL) {
+        printf("NULL head \n");
+        return;
+    }
    Token *tmp = list->head;
     if(tmp == NULL){
         printf("NULL head \n");
@@ -232,7 +243,7 @@ TokenList *CreateTokenList(){
 TokenList* push_token_from_head(TokenList *list, TokenType type, const char *value, int value_length){
     Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
     new_token->type = type;
-    new_token->value = strncpy_no_brackets( value , value_length);
+    new_token->value = strncpy_no_quotes( value , value_length);
     new_token->next = NULL;
     new_token->prev = NULL;
     
@@ -255,8 +266,15 @@ TokenList* push_token_from_head(TokenList *list, TokenType type, const char *val
 TokenList* push_token_from_tail(TokenList *list, TokenType type, const char *value, int value_length){
     Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
     new_token->type = type;
-    
-    new_token->value = strncpy_no_brackets( value , value_length);
+    if(type == TOKEN_WORD){
+        new_token->value = strncpy_no_quotes( value , value_length);
+    }else if(type == TOKEN_COMMENT){
+        new_token->value = malloc(sizeof(char) * value_length + 1 );
+        strncpy(new_token->value, value , value_length);
+        new_token->value[value_length] = '\0';
+    }else{
+        new_token->value = NULL;
+    }
     new_token->next = NULL;
     new_token->prev = NULL;
     
@@ -266,14 +284,16 @@ TokenList* push_token_from_tail(TokenList *list, TokenType type, const char *val
        // printf("head ISNT NULL now \n");
     } else {
         list->tail->next = new_token;
-        new_token->prev = list->tail->next;
+        new_token->prev = list->tail;
         list->tail = new_token;
 
     }
     return list;
 }
 void destroy_tokens(TokenList *list){
-    
+    if (list == NULL) {
+        return;
+    }
     Token *temp = list->head; 
     while(list->head != NULL){
         temp = list->head->next;
@@ -283,6 +303,7 @@ void destroy_tokens(TokenList *list){
         list->head = temp;
     }
     list->tail = NULL;
+    free(list);
 }
 
 const char *GetTokenType(TokenType state) {
@@ -304,41 +325,68 @@ const char *GetTokenType(TokenType state) {
     }
 }
 // Копирование без кавычек и слэшей
-char *strncpy_no_brackets( const char *old_value,  int old_value_length) {
+char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
     //printf("%d",old_value[0]);
     char *new_value;
     int is_backslash = 0;
-    int new_value_length = old_value_length;
-    for(int i = 0; i < old_value_length ;++i){
-            if( old_value[i] == '"'|| old_value[i] == '\''){
-                       --new_value_length ; 
-            }else if(old_value[i] == '\\'){
-                if (i + 1 < old_value_length) {
-                    ++i; 
-                }
-                --new_value_length ; 
-            }
-        }
-    new_value = malloc(sizeof(char)* new_value_length +1 );  //для \0
+    StateType state = NORMAL;
+    new_value = malloc(sizeof(char)* old_value_length +1 );  //для \0
+    
     char *new_ptr = new_value;
     const char *old_ptr = old_value;
     int written = 0;
-    for (int i = 0; i < old_value_length && written < new_value_length; ++i, ++old_ptr) {
+    for (int i = 0; i < old_value_length; ++i, ++old_ptr) {
         if(!is_backslash)
         {if(*old_ptr == '\\'){
-            is_backslash = 1 ;
-            continue;
+             switch(state){
+                case NORMAL:
+                    is_backslash = 1 ;
+                    continue;
+                case IN_DOUBLE_QUOTE:
+                    if( i + 1 < old_value_length &&(*(old_ptr + 1) == '"'|| *(old_ptr + 1) == '\\' || *(old_ptr + 1) == '\n')){
+                        is_backslash = 1 ;
+                        continue;
+                    }
+                    break;  
+                case IN_SINGLE_QUOTE:
+                    break;
+                    
+            }
+
+            
+            }
+        if ( *old_ptr == '"' ) {
+            switch(state){
+                case NORMAL:
+                    state = IN_DOUBLE_QUOTE;
+                    continue;
+                case IN_DOUBLE_QUOTE:
+                    state = NORMAL;
+                    continue;
+                case IN_SINGLE_QUOTE:
+                    break;    
+            }
+
+        }else if(*old_ptr == '\''){
+            switch(state){
+                case NORMAL:
+                    state = IN_SINGLE_QUOTE;
+                    continue;
+                case IN_SINGLE_QUOTE:
+                    state = NORMAL;
+                    continue;
+                case IN_DOUBLE_QUOTE:
+                    break;
+            }
         }
-        if ( *old_ptr == '"' || *old_ptr == '\'') {
-            continue;
-        }}
+        }
 
         *new_ptr = *old_ptr;
         ++new_ptr;
         ++written;
         is_backslash = 0;
     }
-    new_value[new_value_length] = '\0';
+    new_value[written] = '\0';  //оставляем небольшой хвост который в любом случае уберется при помощи free 
     return new_value;
 }
 

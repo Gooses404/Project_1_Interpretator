@@ -1,18 +1,23 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -Isrc -Isrc/reader
+CC ?= gcc
+CFLAGS = -Wall -Wextra -std=c23 -D_POSIX_C_SOURCE=200809L -Isrc -Isrc/reader
+TARGET = mysh
 
-TARGET = myfind
-
-SRCS = src/reader/lexer.c \
-       src/reader/parser.c \
+SRCS = src/main.c \
        src/commands.c \
-       src/main.c
+       src/reader/lexer.c \
+       src/reader/parser.c
 
 OBJS = $(SRCS:.c=.o)
 
-.PHONY: all clean run
+.PHONY: all debug clean run
 
+# Стандартная сборка с оптимизацией
+all: CFLAGS += -O2
 all: $(TARGET)
+
+# Отладочная цель с AddressSanitizer и отладочными символами по ТЗ
+debug: CFLAGS += -g -fsanitize=address,undefined
+debug: clean $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@

@@ -53,7 +53,7 @@ void destroy_tokens(TokenList *list);
 
 
 TokenList* tokenize(char *text_of_input);
-char *strncpy_no_brackets(const char *old_value, int old_value_lenght);
+char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);
 #endif

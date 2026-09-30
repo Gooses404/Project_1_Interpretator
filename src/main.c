@@ -5,8 +5,22 @@
 #include <string.h>
 #include "commands.h"
 #include "lexer.h"
+#define SHELL_NAME "mysh"
 
-int main() {
+
+int main(int argc, char* argv[]) {
+    ShellConfig config;
+    for (int i = 1; i < argc; ++i) {
+    if (strcmp(argv[i], "--dump-tokens") == 0) {
+        config.dump_tokens = true;
+    } else if (strcmp(argv[i], "--dump-ast") == 0) {
+        config.dump_ast = true;
+    } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+        config.command_str = argv[++i];
+        config.interactive = false;
+    }
+}
+
     int bytes_read = 0 ,size_of_text_of_input = 100;
     char *text_of_input ;
     Token* head;
