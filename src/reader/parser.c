@@ -1,9 +1,1 @@
-struct word{
-
-};
-struct operatr{
-
-
-
-};
-
+void createTree();

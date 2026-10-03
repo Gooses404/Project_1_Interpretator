@@ -1,2 +1,2 @@
-echo " hello world\""
-01234
+echo " hello world\"" asd;asd        ; d|ds dadwd fa
+012345678

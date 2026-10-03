@@ -1,6 +1,6 @@
 #ifndef LEXER_H
 #define LEXER_H
-
+#define ARRAY_INITIAL_SIZE 16
 typedef enum {
     TOKEN_WORD,   
     TOKEN_COMMENT,    
@@ -33,26 +33,27 @@ typedef enum{
 typedef struct Token {
     TokenType type;
     char *value;           // Строка с текстом (имеет смысл только для TOKEN_WORD, для остальных можно NULL)
-    struct Token *next;
-    struct Token *prev;
+
 } Token;
 
-typedef struct TokenList {
+typedef struct TokenArray {
     Token *head;
-    Token *tail;
-}TokenList; 
+    int cur_index;
+    int cur_size;
+}TokenArray; 
 
 bool check_meta(unsigned char c);
 
 
-TokenList *CreateTokenList();
-void print_tokens(TokenList *head);
-TokenList* push_token_from_head(TokenList *list, TokenType type, const char *value, int value_length);
-TokenList* push_token_from_tail(TokenList *list, TokenType type, const char *value, int value_length);
-void destroy_tokens(TokenList *list);
+TokenArray *CreateTokenList();
+TokenArray *CreateTokenArray();
+void print_tokens(TokenArray *head);
+TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int value_length);
+TokenArray* push_token_from_tail(TokenArray *list, TokenType type, const char *value, int value_length);
+void destroy_tokens(TokenArray *list);
 
 
-TokenList* tokenize(char *text_of_input);
+TokenArray* tokenize(char *text_of_input);
 char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);

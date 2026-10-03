@@ -21,13 +21,13 @@ bool check_meta(unsigned char c) {
     return is_meta[c]; 
 }
 
-TokenList* tokenize(char *text_of_input){
+TokenArray* tokenize(char *text_of_input){
     if(text_of_input == NULL){
         return NULL;
     }
     //printf("Tokenize start\n");
     char *current = text_of_input, *start = text_of_input;
-    TokenList * list = CreateTokenList(); 
+    TokenArray * array = CreateTokenArray(); 
     StateType state = NORMAL;
     StateType normal_state = NORMAL; //нужен чтобы после \ вернуться к правильному состоянию
     int val_len = 0;
@@ -38,7 +38,7 @@ TokenList* tokenize(char *text_of_input){
             state = IN_COMMENT;
             //printf("com start");
             // if(current != start){
-            //     list = push_token_from_tail(list, TOKEN_COMMENT, start, current - start );
+            //     list = AddToken(list, TOKEN_COMMENT, start, current - start );
             // }
             start = current;
         }
@@ -49,11 +49,11 @@ TokenList* tokenize(char *text_of_input){
                 state = NORMAL;
 
                 //val_len = current - start - 1 ;
-              //  list = push_token_from_tail(list, TOKEN_COMMENT, start + 1, val_len);
+              //  list = AddToken(list, TOKEN_COMMENT, start + 1, val_len);
             if(*current == '\n'){
                 start = current;
                 val_len =1;
-                list = push_token_from_tail(list, TOKEN_SEQ, start, val_len);
+                array = AddToken(array, TOKEN_SEQ, start, val_len);
 
                 }
             }
@@ -77,7 +77,7 @@ TokenList* tokenize(char *text_of_input){
         } else if(state == IN_BACKSLASH){
             state = normal_state;
             if(*(current + 1) == '\0'){
-                list = push_token_from_tail(list, TOKEN_WORD, start, current - start +1);
+                array = AddToken(array, TOKEN_WORD, start, current - start +1);
                 is_skiped = 1;
                 continue;
             }else{
@@ -102,14 +102,16 @@ TokenList* tokenize(char *text_of_input){
         
         }
     if(!is_skiped)
-    {    
+    {   if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
+            start = current;
+        } 
         if(check_meta(*current) || *(current + 1 ) =='\0' ) // Должны запушить что нибудь               //*current ==' ' || *current == '\t' || *current == '\n' 
             {  
-            if((*(current + 1 ) =='\0' ) && !check_meta(*current)){
-                if( (check_meta(*start)) && start < current  ){ /// Ставаит start на начало след слова или спец символа, если start был пробелом, а current уже не пробел
-                    start = current;
-                }
-            }
+            // if((*(current + 1 ) =='\0' ) && !check_meta(*current)){
+            //     if( (check_meta(*start)) && start < current  ){ /// Ставаит start на начало след слова или спец символа, если start был пробелом, а current уже не пробел
+            //         start = current;
+            //     }
+            // }
             
             if(state != NORMAL){
                 ++current;
@@ -122,7 +124,7 @@ TokenList* tokenize(char *text_of_input){
                     ++val_len; 
                 }
                
-                list = push_token_from_tail(list, TOKEN_WORD, start, val_len);
+                array = AddToken(array, TOKEN_WORD, start, val_len);
                // printf("STATE %d\n",state);
 
                 start = current;
@@ -135,18 +137,18 @@ TokenList* tokenize(char *text_of_input){
                     start = current;
                     if(*(current + 1 ) == '|'){
                         val_len = 2;
-                        list = push_token_from_tail(list, TOKEN_OR, start, val_len);
+                        array = AddToken(array, TOKEN_OR, start, val_len);
                         ++current;
 
                     }else if (*(current + 1 ) == '&'){
                         
                         val_len = 2;
-                        list = push_token_from_tail(list, TOKEN_ERROR_PIPE, start, val_len);
+                        array = AddToken(array, TOKEN_ERROR_PIPE, start, val_len);
                         ++current;
                     }
                      else {
                         val_len =1;
-                        list = push_token_from_tail(list, TOKEN_PIPE, start, val_len);
+                        array = AddToken(array, TOKEN_PIPE, start, val_len);
 
                     }
     
@@ -155,12 +157,12 @@ TokenList* tokenize(char *text_of_input){
                 start = current;
                  if(*(current + 1) == '&'){
                         val_len = 2;
-                        list = push_token_from_tail(list, TOKEN_AND, start, val_len);
+                        array = AddToken(array, TOKEN_AND, start, val_len);
                         ++current;
                     } else {
                         val_len =1;
 
-                        list = push_token_from_tail(list, TOKEN_BG, start, val_len);
+                        array = AddToken(array, TOKEN_BG, start, val_len);
                     }
                     break;
                     // не входят в базу: перенаправления с явным номером файлового дескриптора
@@ -168,38 +170,38 @@ TokenList* tokenize(char *text_of_input){
                 case'<':
                     start = current;
                     val_len =1;
-                    list = push_token_from_tail(list, TOKEN_REDIRECT_IN, start, val_len);     
+                    array = AddToken(array, TOKEN_REDIRECT_IN, start, val_len);     
                     break;
                 case'>':
                     start = current;
                     if(*(current + 1) == '>'){
                         val_len = 2;
-                        list = push_token_from_tail(list,TOKEN_REDIRECT_D_OUT , start, val_len);
+                        array = AddToken(array,TOKEN_REDIRECT_D_OUT , start, val_len);
                         ++current;
                     } else {
                         val_len =1;
-                        list = push_token_from_tail(list, TOKEN_REDIRECT_OUT, start, val_len);
+                        array = AddToken(array, TOKEN_REDIRECT_OUT, start, val_len);
                     }
                     break;
                 case';':
                         start = current;
                         val_len =1;
-                        list = push_token_from_tail(list, TOKEN_SEQ, start, val_len);
+                        array = AddToken(array, TOKEN_SEQ, start, val_len);
                     break;
                 case'(':
                     start = current;
                     val_len =1;
-                    list = push_token_from_tail(list, TOKEN_OPEN_BRACKET, start, val_len);
+                    array = AddToken(array, TOKEN_OPEN_BRACKET, start, val_len);
                     break;
                 case')':
                     start = current;
                     val_len =1;
-                    list = push_token_from_tail(list, TOKEN_CLOSE_BRACKET, start, val_len);
+                    array = AddToken(array, TOKEN_CLOSE_BRACKET, start, val_len);
                     break;
                 case'\n':
                     start = current;
                     val_len =1;
-                    list = push_token_from_tail(list, TOKEN_SEQ, start, val_len);
+                    array = AddToken(array, TOKEN_SEQ, start, val_len);
                     break;
                 default:
                     break;
@@ -208,73 +210,69 @@ TokenList* tokenize(char *text_of_input){
                 start = current ;
                
         }
-        if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
-            start = current;
-        }
+       
     }
         
         ++current;
         is_skiped =0;
     }
     if(state != NORMAL){
-        destroy_tokens(list);
+        destroy_tokens(array);
         write(STDERR_FILENO,"2",1);
         return NULL;
         
     }
-    return list;
+    return array;
 }
-void print_tokens(TokenList *list){
+void print_tokens(TokenArray *list){
     
    // printf("Start of printing tokns \n");
     if (list == NULL || list->head == NULL) {
         printf("NULL head \n");
         return;
     }
-   Token *tmp = list->head;
-    if(tmp == NULL){
-        printf("NULL head \n");
-
-    }
-    while(tmp != NULL){
-        if(tmp->type == TOKEN_WORD || tmp->type == TOKEN_COMMENT ){
-            printf("Token type: %s, value: %s\n", GetTokenType(tmp->type), tmp->value);
+    for(int i = 0; i < list->cur_index; ++i){
+        if(list->head[i].type == TOKEN_WORD || list->head[i].type == TOKEN_COMMENT ){
+            printf("Token type: %s, value: %s\n", GetTokenType(list->head[i].type), list->head[i].value);
         }else{
-            printf("Token type: %s, value: %s\n", GetTokenType(tmp->type), GetTokenValue(tmp->type));
+            printf("Token type: %s, value: %s\n", GetTokenType(list->head[i].type), GetTokenValue(list->head[i].type));
         }
-        tmp = tmp->next;
+        
     }
 }
-TokenList *CreateTokenList(){
-    TokenList *list =malloc(sizeof(TokenList));
-    list->head = NULL; 
-    list->tail = NULL;
-    return list; 
+TokenArray *CreateTokenArray(){
+    TokenArray *arr =malloc(sizeof(TokenArray));
+    arr->head = malloc(sizeof(Token) * ARRAY_INITIAL_SIZE); 
+    arr->cur_index = 0;
+    arr->cur_size = ARRAY_INITIAL_SIZE;
+    return arr; 
 }
-TokenList* push_token_from_head(TokenList *list, TokenType type, const char *value, int value_length){
-    Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
+TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int value_length){
+    if(arr == NULL){
+        arr = CreateTokenArray();
+    }
+     Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
     new_token->type = type;
-    new_token->value = strncpy_no_quotes( value , value_length);
-    new_token->next = NULL;
-    new_token->prev = NULL;
-    
-    if(list->head == NULL){
-        list->head = new_token;
-        list->tail = new_token;
-       // printf("head ISNT NULL now \n");
-    } else {
-        Token *temp = list->head;
-        while(temp->next != NULL){
-            temp = temp->next;
-        }
-        temp->next = new_token;
-        new_token->prev = temp;
-        list->tail = new_token;
-
+    if(type == TOKEN_WORD){
+        new_token->value = strncpy_no_quotes( value , value_length);
+    }else if(type == TOKEN_COMMENT){
+        new_token->value = malloc(sizeof(char) * value_length + 1 );
+        strncpy(new_token->value, value , value_length);
+        new_token->value[value_length] = '\0';
+    }else{
+        new_token->value = NULL;
     }
-    return list;
+    if(arr->cur_index + 1  >= arr->cur_size){
+        arr->cur_size *= 2;
+        arr->head = Resize_Token_Array(arr->head, arr->cur_size);
+    }
+    arr->head[arr->cur_index++] = *new_token;
+    return arr;
 }
-TokenList* push_token_from_tail(TokenList *list, TokenType type, const char *value, int value_length){
+/*TokenArray* push_token_from_tail(TokenArray *list, TokenType type, const char *value, int value_length){
+    if(list == NULL){
+        list = CreateTokenList();
+    }
     Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
     new_token->type = type;
     if(type == TOKEN_WORD){
@@ -301,19 +299,14 @@ TokenList* push_token_from_tail(TokenList *list, TokenType type, const char *val
     }
     return list;
 }
-void destroy_tokens(TokenList *list){
+*/
+void destroy_tokens(TokenArray *list){ 
     if (list == NULL) {
         return;
     }
-    Token *temp = list->head; 
-    while(list->head != NULL){
-        temp = list->head->next;
-
-        free(list->head->value);
-        free(list->head);
-        list->head = temp;
+    for(int i = 0; i < list->cur_index; i++){
+        free(list->head[i].value);
     }
-    list->tail = NULL;
     free(list);
 }
 
