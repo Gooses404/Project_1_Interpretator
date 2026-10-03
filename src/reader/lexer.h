@@ -45,15 +45,15 @@ typedef struct TokenArray {
 bool check_meta(unsigned char c);
 
 
-TokenArray *CreateTokenList();
 TokenArray *CreateTokenArray();
 void print_tokens(TokenArray *head);
 TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int value_length);
-TokenArray* push_token_from_tail(TokenArray *list, TokenType type, const char *value, int value_length);
 void destroy_tokens(TokenArray *list);
 
 
 TokenArray* tokenize(char *text_of_input);
+//char *tokenise_commment(char **current, char **start);
+
 char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);

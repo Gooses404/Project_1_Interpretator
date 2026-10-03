@@ -107,11 +107,6 @@ TokenArray* tokenize(char *text_of_input){
         } 
         if(check_meta(*current) || *(current + 1 ) =='\0' ) // Должны запушить что нибудь               //*current ==' ' || *current == '\t' || *current == '\n' 
             {  
-            // if((*(current + 1 ) =='\0' ) && !check_meta(*current)){
-            //     if( (check_meta(*start)) && start < current  ){ /// Ставаит start на начало след слова или спец символа, если start был пробелом, а current уже не пробел
-            //         start = current;
-            //     }
-            // }
             
             if(state != NORMAL){
                 ++current;
@@ -125,7 +120,7 @@ TokenArray* tokenize(char *text_of_input){
                 }
                
                 array = AddToken(array, TOKEN_WORD, start, val_len);
-               // printf("STATE %d\n",state);
+               
 
                 start = current;
                 
