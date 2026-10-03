@@ -19,7 +19,7 @@ typedef struct {
 char* Resize_char(char* input, int size);
 void lexer_test_mode();
 
-char* read_input();
+char* read_input(int fd);
 
 
 

@@ -23,7 +23,7 @@ bool check_meta(unsigned char c) {
 
 TokenList* tokenize(char *text_of_input){
     if(text_of_input == NULL){
-        
+        return NULL;
     }
     //printf("Tokenize start\n");
     char *current = text_of_input, *start = text_of_input;
@@ -47,8 +47,15 @@ TokenList* tokenize(char *text_of_input){
             
             if(*current == '\n' || *(current + 1) == '\0'){
                 state = NORMAL;
-                val_len = current - start - 1 ;
+
+                //val_len = current - start - 1 ;
               //  list = push_token_from_tail(list, TOKEN_COMMENT, start + 1, val_len);
+            if(*current == '\n'){
+                start = current;
+                val_len =1;
+                list = push_token_from_tail(list, TOKEN_SEQ, start, val_len);
+
+                }
             }
             ++current;
             continue;
@@ -67,7 +74,17 @@ TokenList* tokenize(char *text_of_input){
             }else if(*current == '\\'){
                 state = IN_BACKSLASH;
             }
-            
+        } else if(state == IN_BACKSLASH){
+            state = normal_state;
+            if(*(current + 1) == '\0'){
+                list = push_token_from_tail(list, TOKEN_WORD, start, current - start +1);
+                is_skiped = 1;
+                continue;
+            }else{
+                is_skiped = 1;
+                
+
+            }
         }  else if(*current == '\\' && state != IN_SINGLE_QUOTE){
                 state = IN_BACKSLASH;
         } else if(state == IN_SINGLE_QUOTE ){
@@ -82,17 +99,7 @@ TokenList* tokenize(char *text_of_input){
                 normal_state = NORMAL;
 
             }
-        } else if(state == IN_BACKSLASH){
-            state = normal_state;
-            if(*(current + 1) == '\0'){
-                list = push_token_from_tail(list, TOKEN_WORD, start, current - start +1);
-                is_skiped = 1;
-                continue;
-            }else{
-                is_skiped = 1;
-                
-
-            }
+        
         }
     if(!is_skiped)
     {    
@@ -111,7 +118,7 @@ TokenList* tokenize(char *text_of_input){
             /// WORD
             if(!check_meta(*start)){ //Пушим слово
                 val_len = current - start;
-                if((*(current + 1 ) =='\0'  )&& !check_meta(*current)){
+                if((*(current + 1 ) =='\0'  )&& !check_meta(*current)){ // проверка того что слово именно в конце строки
                     ++val_len; 
                 }
                
@@ -211,7 +218,7 @@ TokenList* tokenize(char *text_of_input){
     }
     if(state != NORMAL){
         destroy_tokens(list);
-        write(2,"2",1);
+        write(STDERR_FILENO,"2",1);
         return NULL;
         
     }
@@ -230,7 +237,11 @@ void print_tokens(TokenList *list){
 
     }
     while(tmp != NULL){
-        printf("Token type: %s, value: %s\n", GetTokenType(tmp->type), tmp->value);
+        if(tmp->type == TOKEN_WORD || tmp->type == TOKEN_COMMENT ){
+            printf("Token type: %s, value: %s\n", GetTokenType(tmp->type), tmp->value);
+        }else{
+            printf("Token type: %s, value: %s\n", GetTokenType(tmp->type), GetTokenValue(tmp->type));
+        }
         tmp = tmp->next;
     }
 }
@@ -324,6 +335,24 @@ const char *GetTokenType(TokenType state) {
         default:                    return "UNKNOWN";
     }
 }
+const char *GetTokenValue(TokenType state) {
+    switch (state) {
+        case TOKEN_WORD:            return "WORD";
+        case TOKEN_COMMENT:         return "COMMENT";
+        case TOKEN_PIPE:            return "|";
+        case TOKEN_ERROR_PIPE:      return "|&";
+        case TOKEN_BG:              return "&";
+        case TOKEN_SEQ:             return ";";
+        case TOKEN_AND:             return "&&";
+        case TOKEN_OR:              return "||";  
+        case TOKEN_REDIRECT_IN:     return "<";
+        case TOKEN_REDIRECT_D_OUT:  return ">>";
+        case TOKEN_REDIRECT_OUT:    return ">";
+        case TOKEN_OPEN_BRACKET:    return "(";
+        case TOKEN_CLOSE_BRACKET:   return ")";
+        default:                    return "UNKNOWN";
+    }
+}
 // Копирование без кавычек и слэшей
 char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
     //printf("%d",old_value[0]);
@@ -350,7 +379,8 @@ char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
                     break;  
                 case IN_SINGLE_QUOTE:
                     break;
-                    
+                default:
+                    break;        
             }
 
             
@@ -365,6 +395,8 @@ char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
                     continue;
                 case IN_SINGLE_QUOTE:
                     break;    
+                default:
+                    break;
             }
 
         }else if(*old_ptr == '\''){
@@ -376,6 +408,8 @@ char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
                     state = NORMAL;
                     continue;
                 case IN_DOUBLE_QUOTE:
+                    break;
+                default:
                     break;
             }
         }

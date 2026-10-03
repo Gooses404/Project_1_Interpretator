@@ -56,4 +56,5 @@ TokenList* tokenize(char *text_of_input);
 char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);
+const char *GetTokenValue(TokenType state);
 #endif

@@ -14,7 +14,7 @@ void lexer_test_mode(){
         char *text_of_input ;
         TokenList* head;
         printf("START_OF_PROGRAMM\n");
-        text_of_input = read_input();
+        text_of_input = read_input(0);
         if (text_of_input == NULL) {
             exit(0);                    // EOF \Ctrl-D 
         }
@@ -24,16 +24,15 @@ void lexer_test_mode(){
         destroy_tokens(head);
 }
 
-char* read_input(){
+char* read_input(int fd){
     printf("Start of reading\n");
-    int bytes_read = 0 ,                size_of_text_of_input = 100;
-    char *text_of_input = malloc(size_of_text_of_input * sizeof(char)),          
-        symbol[1];
-        ssize_t res = 0;
-        
+    int bytes_read = 0 ,                size_of_text_of_input = 100,    size_of_buf = 16;
+    char *text_of_input = malloc(size_of_text_of_input * sizeof(char));          
+    ssize_t res = 0;
+    char *buf = malloc(size_of_buf * sizeof(char));
         while(1){    // по одному
 
-        res = read(0, symbol, 1);
+        res = read(fd, buf, size_of_buf);
         
         if(res == -1 ){
             if (errno == EINTR) {
@@ -51,22 +50,25 @@ char* read_input(){
             
             break;
         }
-        text_of_input[bytes_read++] = symbol[0];        
-        if(symbol[0] == '\n'){ // запись перед прекращ ввода
-            //  text_of_input[bytes_read++] = symbol[0];   
-            break;
+        for(int i = 0 ; i < res ; ++i){
+        
+            text_of_input[bytes_read++] = buf[i];        
+            
+            if(bytes_read >= size_of_text_of_input - 2){
+                size_of_text_of_input *= 2;
+                text_of_input = Resize_char(text_of_input, size_of_text_of_input);
+            }
+            
+            if(buf[i] == '\n'){ // запись перед прекращ ввода
+                //  text_of_input[bytes_read++] = buf[i];   
+                goto out_of_loop;
+                
+            }
         }
-
-        if(bytes_read >= size_of_text_of_input - 1){
-            size_of_text_of_input *= 2;
-            text_of_input = Resize_char(text_of_input, size_of_text_of_input);
-        }      
-        ////printf(" %c",symbol[0]);    
+        
     }
-    if(bytes_read + 1  >= size_of_text_of_input - 1){
-        size_of_text_of_input *= 2;
-        text_of_input = Resize_char(text_of_input, size_of_text_of_input);
-    }
+    out_of_loop:
+    free(buf);
     text_of_input[bytes_read] = '\0';
     //printf("End_of_reading %s ||a %d\n",text_of_input, strlen(text_of_input));
     return text_of_input ;

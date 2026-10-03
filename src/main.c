@@ -21,9 +21,9 @@ int main(int argc, char* argv[]) {
     }
 }
 
-    int bytes_read = 0 ,size_of_text_of_input = 100;
-    char *text_of_input ;
-    Token* head;
+    //int bytes_read = 0 ,size_of_text_of_input = 100;
+    //char *text_of_input ;
+    //Token* head;
     while(1){    // global loop for reading input
         
         // printf("START_OF_PROGRAMM\n");
