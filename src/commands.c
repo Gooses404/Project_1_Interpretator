@@ -1,6 +1,5 @@
 
 #include "commands.h"
-#include "lexer.h"
 char* Resize_char(char* input, int size){
     char* new_input = (char*)realloc(input, size * sizeof(char));
     if (new_input == NULL) {    
@@ -48,12 +47,14 @@ char* read_input(int fd){
                 continue; // Прерывание сигналом 
             }
             free(text_of_input);
+            free(buf);
             return NULL;
 
         }
         if( res == 0 ){ // EOF
             if (bytes_read == 0) {
                 free(text_of_input);
+                free(buf);
                 return NULL; 
             }
             

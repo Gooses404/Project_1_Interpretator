@@ -29,102 +29,53 @@ TokenArray* tokenize(char *text_of_input){
     char *current = text_of_input, *start = text_of_input;
     TokenArray * array = CreateTokenArray(); 
     StateType state = NORMAL;
-    StateType normal_state = NORMAL; //нужен чтобы после \ вернуться к правильному состоянию
+    
     int val_len = 0;
     int is_skiped = 0;
     while(*current != '\0'){
-
-        if (*current == '#' && state == NORMAL  && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
-            state = IN_COMMENT;
-            //printf("com start");
-            // if(current != start){
-            //     list = AddToken(list, TOKEN_COMMENT, start, current - start );
-            // }
+        if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
             start = current;
         }
-
-        if(state == IN_COMMENT ){ // продолжаем комментарий до конца строки 
-            
-            if(*current == '\n' || *(current + 1) == '\0'){
-                state = NORMAL;
-
-                //val_len = current - start - 1 ;
-              //  list = AddToken(list, TOKEN_COMMENT, start + 1, val_len);
-            if(*current == '\n'){
-                start = current;
-                val_len =1;
-                array = AddToken(array, TOKEN_SEQ, start, val_len);
-
+        if (*current == '#' && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
+            tokenise_commment(&current, &start); //array,val_len,
+        }
+      
+            if(*current == '\''){
+                if(tokenise_single_quote(&current) == -1){ //array,val_len,
+                    goto quote_error;   
                 }
             }
-            ++current;
-            continue;
-        }
-
-        if(state == NORMAL){
-            if(*current == '\''){
-                normal_state = IN_SINGLE_QUOTE;
-                state = IN_SINGLE_QUOTE;
-            }
              else if(*current == '"'){
-                 
-                 normal_state = IN_DOUBLE_QUOTE;
-                 state = IN_DOUBLE_QUOTE;
+                if(tokenise_double_quote(&current) == -1){ //array,val_len,
+                    goto quote_error;
+            }
 
             }else if(*current == '\\'){
                 state = IN_BACKSLASH;
-            }
-        } else if(state == IN_BACKSLASH){
-            state = normal_state;
-            if(*(current + 1) == '\0'){
-                array = AddToken(array, TOKEN_WORD, start, current - start +1);
-                is_skiped = 1;
-                continue;
+            }else if(state == IN_BACKSLASH){
+                state = NORMAL;
+                if(*(current + 1) == '\0'){
+                    array = AddToken(array, TOKEN_WORD, start, current - start +1);
+                    is_skiped = 1;
+                    continue;
             }else{
                 is_skiped = 1;
                 
 
             }
-        }  else if(*current == '\\' && state != IN_SINGLE_QUOTE){
-                state = IN_BACKSLASH;
-        } else if(state == IN_SINGLE_QUOTE ){
-            if(*current == '\''){
-                state = NORMAL;
-                normal_state = NORMAL;
-                
-            }   
-        } else if(state == IN_DOUBLE_QUOTE){
-            if(*current == '\"'){
-                state = NORMAL;
-                normal_state = NORMAL;
-
-            }
-        
-        }
+        }       
     if(!is_skiped)
-    {   if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
-            start = current;
-        } 
+    {    
         if(check_meta(*current) || *(current + 1 ) =='\0' ) // Должны запушить что нибудь               //*current ==' ' || *current == '\t' || *current == '\n' 
             {  
-            
-            if(state != NORMAL){
-                ++current;
-                continue;
-            }
             /// WORD
             if(!check_meta(*start)){ //Пушим слово
                 val_len = current - start;
                 if((*(current + 1 ) =='\0'  )&& !check_meta(*current)){ // проверка того что слово именно в конце строки
                     ++val_len; 
                 }
-               
                 array = AddToken(array, TOKEN_WORD, start, val_len);
-               
-
-                start = current;
-                
-                
+                start = current;   
             }   
 
             switch (*current){
@@ -201,7 +152,7 @@ TokenArray* tokenize(char *text_of_input){
                 default:
                     break;
                 }
-            
+               
                 start = current ;
                
         }
@@ -211,14 +162,65 @@ TokenArray* tokenize(char *text_of_input){
         ++current;
         is_skiped =0;
     }
-    if(state != NORMAL){
+    
+    return array;
+
+    quote_error:
         destroy_tokens(array);
         write(STDERR_FILENO,"2",1);
         return NULL;
-        
-    }
-    return array;
 }
+char *tokenise_commment( char **current, char **start){ //TokenArray *array,int val_len,
+    *start = *current;
+    while(*(*current + 1) != '\0' && **current != '\n'){
+        ++*current;
+    }
+    *start = *current;
+    /*if(**current == '\n'){
+        
+        val_len =1;
+        array = AddToken(array, TOKEN_SEQ, *start, val_len);
+        //val_len = current - start - 1 ;
+        //list = AddToken(list, TOKEN_COMMENT, start + 1, val_len);
+
+                }*/
+        return NULL;
+    }
+int tokenise_single_quote(char **current){
+    ++*current;
+     while(*(*current + 1) != '\0' && **current != '\''){ // Поскольку \ не имеет силы в одинрных кавычках, просто сдвигаем каретку до следующего появления одинарной кавычки или конца строки
+        // if(**current == '\\' && *(*current + 1) == '\''){ // если встретили \', то пропускаем \ и продолжаем
+        //     ++*current;
+        // }
+        ++*current;
+    }
+    if(**current != '\''){
+        //write(STDERR_FILENO,"2",1);
+        return -1;
+    }
+
+    return 0;
+}
+int tokenise_double_quote(char **current){
+    ++*current;
+    while(*(*current + 1) != '\0' && **current != '"'){    
+        if(**current == '\\' && *(*current + 1) == '"'){ // если встретили \", то пропускаем \ и продолжаем
+            ++*current;
+        } 
+        ++*current;
+    }
+    if(**current != '"'){
+      //  write(STDERR_FILENO,"2",1);
+        return -1;
+    }
+    return 0;
+}
+
+
+
+
+
+
 void print_tokens(TokenArray *list){
     
    // printf("Start of printing tokns \n");
@@ -246,7 +248,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
     if(arr == NULL){
         arr = CreateTokenArray();
     }
-     Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
+    Token *new_token = &(arr->head[arr->cur_index++]) ; //Изменяем су токен из массива
     new_token->type = type;
     if(type == TOKEN_WORD){
         new_token->value = strncpy_no_quotes( value , value_length);
@@ -261,7 +263,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
         arr->cur_size *= 2;
         arr->head = Resize_Token_Array(arr->head, arr->cur_size);
     }
-    arr->head[arr->cur_index++] = *new_token;
+    
     return arr;
 }
 /*TokenArray* push_token_from_tail(TokenArray *list, TokenType type, const char *value, int value_length){
@@ -302,6 +304,7 @@ void destroy_tokens(TokenArray *list){
     for(int i = 0; i < list->cur_index; i++){
         free(list->head[i].value);
     }
+    free(list->head);
     free(list);
 }
 

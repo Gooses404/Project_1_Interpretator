@@ -52,7 +52,9 @@ void destroy_tokens(TokenArray *list);
 
 
 TokenArray* tokenize(char *text_of_input);
-//char *tokenise_commment(char **current, char **start);
+char *tokenise_commment(char **current, char **start);
+int tokenise_single_quote(char **current);
+int tokenise_double_quote(char **current);
 
 char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 

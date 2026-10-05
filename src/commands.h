@@ -8,6 +8,7 @@
 #include <string.h>
 #include <error.h>
 #include <errno.h>
+#include "lexer.h"
 
 typedef struct {
     bool interactive;       
