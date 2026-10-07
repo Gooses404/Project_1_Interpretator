@@ -8,8 +8,6 @@
 #include <string.h>
 #include <error.h>
 #include <errno.h>
-#include "lexer.h"
-
 typedef struct {
     bool interactive;       
     bool dump_tokens;         
@@ -18,9 +16,6 @@ typedef struct {
 } ShellConfig;
 
 char* Resize_char(char* input, int size);
-Token* Resize_Token_Array(Token* token, int size);
-
-void lexer_test_mode();
 
 char* read_input(int fd);
 

@@ -415,3 +415,26 @@ char *strncpy_no_quotes( const char *old_value,  int old_value_length) {
     return new_value;
 }
 
+Token* Resize_Token_Array(Token* token, int size){
+    Token* new_arr = (Token*)realloc(token, size * sizeof(Token));
+    if (new_arr == NULL) {    
+        free(token);
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    return new_arr;
+}
+
+void lexer_test_mode(){
+        char *text_of_input ;
+        TokenArray* head;
+        printf("START_OF_PROGRAMM\n");
+        text_of_input = read_input(0);
+        if (text_of_input == NULL) {
+            exit(0);                    // EOF \Ctrl-D 
+        }
+        head = tokenize(text_of_input);
+        free(text_of_input);
+        print_tokens(head);
+        destroy_tokens(head);
+}

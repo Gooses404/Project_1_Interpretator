@@ -9,28 +9,9 @@ char* Resize_char(char* input, int size){
     }
     return new_input;
 }
-Token* Resize_Token_Array(Token* token, int size){
-    Token* new_arr = (Token*)realloc(token, size * sizeof(Token));
-    if (new_arr == NULL) {    
-        free(token);
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(1);
-    }
-    return new_arr;
-}
-void lexer_test_mode(){
-        char *text_of_input ;
-        TokenArray* head;
-        printf("START_OF_PROGRAMM\n");
-        text_of_input = read_input(0);
-        if (text_of_input == NULL) {
-            exit(0);                    // EOF \Ctrl-D 
-        }
-        head = tokenize(text_of_input);
-        free(text_of_input);
-        print_tokens(head);
-        destroy_tokens(head);
-}
+
+
+
 
 char* read_input(int fd){
     printf("Start of reading\n");
