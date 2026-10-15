@@ -16,7 +16,7 @@ static const bool is_meta[256] = {
     //////////
    // ['#']  = true
 };
-
+//
 bool check_meta(unsigned char c) {
     return is_meta[c]; 
 }
@@ -236,6 +236,7 @@ void print_tokens(TokenArray *list){
         }
         
     }
+    printf("Capacity: %d Position: %d\n", list->cur_size, list->cur_index);
 }
 TokenArray *CreateTokenArray(){
     TokenArray *arr =malloc(sizeof(TokenArray));
@@ -248,7 +249,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
     if(arr == NULL){
         arr = CreateTokenArray();
     }
-    Token *new_token = &(arr->head[arr->cur_index++]) ; //Изменяем су токен из массива
+    Token *new_token = &(arr->head[arr->cur_index++]) ; //Изменяем сущ токен из массива
     new_token->type = type;
     if(type == TOKEN_WORD){
         new_token->value = strncpy_no_quotes( value , value_length);
@@ -259,7 +260,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
     }else{
         new_token->value = NULL;
     }
-    if(arr->cur_index + 1  >= arr->cur_size){
+    if(arr->cur_index >= arr->cur_size){
         arr->cur_size *= 2;
         arr->head = Resize_Token_Array(arr->head, arr->cur_size);
     }
@@ -425,7 +426,7 @@ Token* Resize_Token_Array(Token* token, int size){
     return new_arr;
 }
 
-void lexer_test_mode(){
+TokenArray* lexer_test_mode(){
         char *text_of_input ;
         TokenArray* head;
         printf("START_OF_PROGRAMM\n");
@@ -436,5 +437,6 @@ void lexer_test_mode(){
         head = tokenize(text_of_input);
         free(text_of_input);
         print_tokens(head);
-        destroy_tokens(head);
+        return head;
+        // destroy_tokens(head);
 }

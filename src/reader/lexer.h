@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 #define ARRAY_INITIAL_SIZE 16
-typedef enum {
+typedef enum TokenType{
     TOKEN_WORD,   
     TOKEN_COMMENT,    
     TOKEN_PIPE, 
@@ -18,7 +18,7 @@ typedef enum {
 } TokenType;
 
 
-typedef enum{
+typedef enum StateType{
     NORMAL,
     IN_SINGLE_QUOTE,
     IN_DOUBLE_QUOTE,
@@ -60,4 +60,7 @@ char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);
 const char *GetTokenValue(TokenType state);
+
+Token* Resize_Token_Array(Token* token, int size);
+TokenArray * lexer_test_mode();
 #endif

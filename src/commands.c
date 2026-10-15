@@ -18,6 +18,7 @@ char* read_input(int fd){
     int bytes_read = 0 ,                size_of_text_of_input = 100,    size_of_buf = 16;
     char *text_of_input = malloc(size_of_text_of_input * sizeof(char));          
     ssize_t res = 0;
+    bool is_backslash = false;
     char *buf = malloc(size_of_buf * sizeof(char));
         while(1){    // по одному
 
@@ -42,7 +43,7 @@ char* read_input(int fd){
             break;
         }
         for(int i = 0 ; i < res ; ++i){
-        
+            
             text_of_input[bytes_read++] = buf[i];        
             
             if(bytes_read >= size_of_text_of_input - 2){
@@ -50,11 +51,19 @@ char* read_input(int fd){
                 text_of_input = Resize_char(text_of_input, size_of_text_of_input);
             }
             
-            if(buf[i] == '\n'){ // запись перед прекращ ввода
+            if(buf[i] == '\n' && !is_backslash){ // запись перед прекращ ввода
                 //  text_of_input[bytes_read++] = buf[i];   
                 goto out_of_loop;
                 
             }
+            if(is_backslash){
+                is_backslash = false;
+            }
+            if(buf[i] == '\\'){ // запись перед прекращ ввода   
+                is_backslash = true;// возможность продолжить команду 
+            }
+             
+            
         }
         
     }

@@ -2,3 +2,4 @@ a | b
 ls
 ls|wc
 ls|wc && cat
+ls|wc && cat ; echo

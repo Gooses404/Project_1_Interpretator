@@ -5,6 +5,8 @@
 #include <string.h>
 #include "commands.h"
 #include "lexer.h"
+#include "parser.h"
+
 #define SHELL_NAME "mysh"
 
 
@@ -26,12 +28,26 @@ int main(int argc, char* argv[]) {
     //Token* head;
     while(1){    // global loop for reading input
         
+        
+        
+        
+        
+        
+        if(config.dump_tokens){
+            
+        }
+        if(config.dump_ast){
+            
+        }
         // printf("START_OF_PROGRAMM\n");
         // text_of_input = read_input();
         // head = tokenize(text_of_input);
         // print_tokens(head);
         // destroy_tokens(head);
-        lexer_test_mode();
+        
+        //lexer_test_mode();
+        parser_test_mode();
+     //   execl("commads_list/myth_echo.c", "a", "b" ,NULL);
     }
     
     

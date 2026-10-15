@@ -3,10 +3,11 @@
 #define PARSER_H
 #include "lexer.h"
 #include "commands.h"
-#define R_ARRAY_INITIAL_SIZE 4
+
+#define R_ARRAY_INITIAL_SIZE 2
 #define ARG_ARRAY_INITIAL_SIZE 4
 typedef enum {
-    NODE_COMMAND,   
+    NODE_COMMAND,
     NODE_PIPELINE,  
     NODE_AND,       
     NODE_OR,        
@@ -18,7 +19,7 @@ typedef enum {
 //  < file, > file, >> file
 typedef struct RedirNode {
     TokenType type;            // TOKEN_REDIRECT_IN, TOKEN_REDIRECT_OUT, TOKEN_REDIRECT_D_OUT
-    char *filename;            
+    char *filename; 
 } RedirNode;
 
 typedef struct RedirArray {
@@ -35,25 +36,24 @@ typedef struct ASTNode {
 
     struct ASTNode *left;
     struct ASTNode *right;
-
-    struct ASTNode *subshell_body; // поддерево внутри ()
 } ASTNode;
 
 ASTNode* parse_tokens(TokenArray *tokens);
 ASTNode* parse_list(TokenArray *tokens);
 ASTNode* parse_and_or(TokenArray *tokens);
 ASTNode* parse_pipe(TokenArray *tokens);
-ASTNode* parse_command(TokenArray *tokens);
-RedirNode* parse_redirections(TokenArray *tokens, int *index);
+ASTNode* parse_simple(TokenArray *tokens);
 
 
 ASTNode* create_node(ASTNodeType type);
 void free_ast(ASTNode *node);
 void print_ast(ASTNode *node, int level);
 
-RedirArray* CreateRedirArray();
+RedirArray* create_redir_array();
+bool is_redir(TokenType type);
 RedirArray* add_redir_node(RedirArray* array, TokenType type, const char *filename);
-RedirNode* Resize_Redir_Array(RedirNode* redir, int size);
+RedirNode* resize_redir_array(RedirNode* redir, int size);
+
 void parser_test_mode();
 
 #endif 
