@@ -8,14 +8,72 @@ ASTNode* parse_list(TokenArray *tokens){
 ASTNode* parse_and_or(TokenArray *tokens) { 
 
 } 
-ASTNode* parse_pipe(TokenArray *tokens){
+ASTNode* parse_pipe(TokenArray *tokens, ASTNode* cur_node){
+    ASTNode *tmp;
+    if(tokens->head[token_array_pos].type == TOKEN_PIPE){
+            tmp = create_node(NODE_PIPELINE);
+            tmp->left = cur_node;
+            tmp->right = NULL;
+            cur_node = tmp;
+            token_array_pos++;
+        
+    }
+    if(cur_node->type == NODE_PIPELINE){
+        cur_node->right = parse_subshell(tokens, cur_node->right);
+    }else{
+        cur_node->left = parse_subshell(tokens, cur_node->left);
+    }
+    return cur_node;
+}
 
-} 
-ASTNode* parse_command(TokenArray *tokens) {
+
+ASTNode* parse_subshell(TokenArray *tokens, ASTNode* cur_node){
+    ASTNode *tmp;
+    if(tokens->head[token_array_pos].type == TOKEN_PIPE){
+            tmp = create_node(NODE_PIPELINE);
+            tmp->left = cur_node;
+            tmp->right = NULL;
+            cur_node = tmp;
+            token_array_pos++;
+        
+    }
+    if(cur_node->type == NODE_PIPELINE){
+        cur_node->right = parse_command(tokens, cur_node->right);
+    }else{
+        cur_node->left = parse_command(tokens, cur_node->left);
+    }
+    return cur_node;
 
 }
-RedirNode* parse_redirections(TokenArray *tokens, int *index){
 
+ASTNode* parse_command(TokenArray *tokens, ASTNode* cur_node){
+    if (tokens->head[token_array_pos].type == TOKEN_WORD) {
+        ASTNode *node = create_node(NODE_COMMAND);
+        node->args_count = 1;
+        node->args = malloc(sizeof(char*) * ARG_ARRAY_INITIAL_SIZE); // первый аргумент это сама команда а далее 
+        node->args[0] = strdup(tokens->head[token_array_pos].value);
+        token_array_pos++;
+        
+        while ( token_array_pos < tokens->cur_index &&  //заполняем арг в цикле пока не встретим не слово или конец массива токенов
+            tokens->head[token_array_pos].type == TOKEN_WORD) {
+            if (node->args_count >= ARG_ARRAY_INITIAL_SIZE) {
+                node->args = realloc(node->args, sizeof(char*) * (node->args_count + 1));
+            }
+            node->args[node->args_count] = strdup(tokens->head[token_array_pos].value);
+            node->args_count++;
+            token_array_pos++;
+
+        }
+        
+        return node;
+    }else{
+        parse_redirections(tokens);
+        return NULL;
+    }
+
+}
+RedirNode* parse_redirections(TokenArray *array){
+    return NULL;
 }
 
 
