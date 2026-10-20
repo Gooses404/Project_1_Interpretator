@@ -43,8 +43,8 @@ char* read_input(int fd){
             break;
         }
         for(int i = 0 ; i < res ; ++i){
-            
-            text_of_input[bytes_read++] = buf[i];        
+            if(!is_backslash || buf[i] != '\n' )
+                text_of_input[bytes_read++] = buf[i];        
             
             if(bytes_read >= size_of_text_of_input - 2){
                 size_of_text_of_input *= 2;

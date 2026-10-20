@@ -1,4 +1,6 @@
-#include "stdio.h"
+#include <stdio.h>
+#include "commands.h"
+
 #define FLAG_N 0b01
 
 int myth_echo(char **argv){

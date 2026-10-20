@@ -13,10 +13,9 @@ static const bool is_meta[256] = {
     [')']  = true,
     ['<']  = true,
     ['>']  = true,
-    //////////
-   // ['#']  = true
+   
 };
-//
+
 bool check_meta(unsigned char c) {
     return is_meta[c]; 
 }
@@ -31,37 +30,33 @@ TokenArray* tokenize(char *text_of_input){
     StateType state = NORMAL;
     
     int val_len = 0;
-    int is_skiped = 0;
+    bool is_skiped = false;
     while(*current != '\0'){
-        if( (check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа, если start был спецсивмолом, а current уже не спецсимвол
-            start = current;
+        if((check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа,
+            start = current;                            // если start был спецсивмолом, а current уже не спецсимвол
         }
         if (*current == '#' && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
-            tokenise_commment(&current, &start); //array,val_len,
+            tokenise_commment(&current, &start); 
         }
-      
-            if(*current == '\''){
-                if(tokenise_single_quote(&current) == -1){ //array,val_len,
-                    goto quote_error;   
-                }
+        if(*current == '\''){
+            if(tokenise_single_quote(&current) == -1){
+                goto quote_error;   
             }
-             else if(*current == '"'){
-                if(tokenise_double_quote(&current) == -1){ //array,val_len,
-                    goto quote_error;
-            }
+        }else if(*current == '"'){
+            if(tokenise_double_quote(&current) == -1){ 
+                goto quote_error;
+        }
 
-            }else if(*current == '\\'){
-                state = IN_BACKSLASH;
-            }else if(state == IN_BACKSLASH){
-                state = NORMAL;
-                if(*(current + 1) == '\0'){
-                    array = AddToken(array, TOKEN_WORD, start, current - start +1);
-                    is_skiped = 1;
-                    continue;
+        }else if(*current == '\\'){
+            state = IN_BACKSLASH;
+        }else if(state == IN_BACKSLASH){
+            state = NORMAL;
+            if(*(current + 1) == '\0'){
+                array = AddToken(array, TOKEN_WORD, start, current - start +1);
+                is_skiped = true;
+                continue;
             }else{
-                is_skiped = 1;
-                
-
+                is_skiped = true;
             }
         }       
     if(!is_skiped)
@@ -71,7 +66,7 @@ TokenArray* tokenize(char *text_of_input){
             /// WORD
             if(!check_meta(*start)){ //Пушим слово
                 val_len = current - start;
-                if((*(current + 1 ) =='\0'  )&& !check_meta(*current)){ // проверка того что слово именно в конце строки
+                if((*(current + 1 ) =='\0' )&& !check_meta(*current)){ // проверка того что слово именно в конце строки
                     ++val_len; 
                 }
                 array = AddToken(array, TOKEN_WORD, start, val_len);
@@ -160,7 +155,7 @@ TokenArray* tokenize(char *text_of_input){
     }
         
         ++current;
-        is_skiped =0;
+        is_skiped = false;
     }
     
     return array;
@@ -176,26 +171,14 @@ char *tokenise_commment( char **current, char **start){ //TokenArray *array,int 
         ++*current;
     }
     *start = *current;
-    /*if(**current == '\n'){
-        
-        val_len =1;
-        array = AddToken(array, TOKEN_SEQ, *start, val_len);
-        //val_len = current - start - 1 ;
-        //list = AddToken(list, TOKEN_COMMENT, start + 1, val_len);
-
-                }*/
-        return NULL;
+    return NULL;
     }
 int tokenise_single_quote(char **current){
     ++*current;
-     while(*(*current + 1) != '\0' && **current != '\''){ // Поскольку \ не имеет силы в одинрных кавычках, просто сдвигаем каретку до следующего появления одинарной кавычки или конца строки
-        // if(**current == '\\' && *(*current + 1) == '\''){ // если встретили \', то пропускаем \ и продолжаем
-        //     ++*current;
-        // }
-        ++*current;
+    while(*(*current + 1) != '\0' && **current != '\''){    // Поскольку \ не имеет силы в одинрных кавычках, 
+        ++*current;                                         // просто сдвигаем каретку до следующего появления одинарной кавычки или конца строки    
     }
     if(**current != '\''){
-        //write(STDERR_FILENO,"2",1);
         return -1;
     }
 
@@ -204,13 +187,12 @@ int tokenise_single_quote(char **current){
 int tokenise_double_quote(char **current){
     ++*current;
     while(*(*current + 1) != '\0' && **current != '"'){    
-        if(**current == '\\' && *(*current + 1) == '"'){ // если встретили \", то пропускаем \ и продолжаем
+        if(**current == '\\' && *(*current + 1) == '"'){ // если встретили \", то пропускаем \ и продолжаем т.е пропуск "
             ++*current;
         } 
         ++*current;
     }
     if(**current != '"'){
-      //  write(STDERR_FILENO,"2",1);
         return -1;
     }
     return 0;
@@ -267,37 +249,6 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
     
     return arr;
 }
-/*TokenArray* push_token_from_tail(TokenArray *list, TokenType type, const char *value, int value_length){
-    if(list == NULL){
-        list = CreateTokenList();
-    }
-    Token *new_token = malloc(sizeof(Token));        //  и нужно создать токен
-    new_token->type = type;
-    if(type == TOKEN_WORD){
-        new_token->value = strncpy_no_quotes( value , value_length);
-    }else if(type == TOKEN_COMMENT){
-        new_token->value = malloc(sizeof(char) * value_length + 1 );
-        strncpy(new_token->value, value , value_length);
-        new_token->value[value_length] = '\0';
-    }else{
-        new_token->value = NULL;
-    }
-    new_token->next = NULL;
-    new_token->prev = NULL;
-    
-    if(list->tail == NULL){
-        list->head = new_token;
-        list->tail = new_token;
-       // printf("head ISNT NULL now \n");
-    } else {
-        list->tail->next = new_token;
-        new_token->prev = list->tail;
-        list->tail = new_token;
-
-    }
-    return list;
-}
-*/
 void destroy_tokens(TokenArray *list){ 
     if (list == NULL) {
         return;

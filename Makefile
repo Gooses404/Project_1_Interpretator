@@ -1,11 +1,12 @@
 CC ?= gcc
-CFLAGS = -Wall -Wextra -std=c23 -D_POSIX_C_SOURCE=200809L -Isrc -Isrc/reader
+CFLAGS = -Wall -Wextra -std=c23 -D_POSIX_C_SOURCE=200809L -Isrc -Ihrs -Isrc/reader
 TARGET = mysh
 
 SRCS = src/main.c \
        src/commands.c \
        src/reader/lexer.c \
-       src/reader/parser.c
+       src/reader/parser.c \
+	   src/commands_list/echo.c
 
 OBJS = $(SRCS:.c=.o)
 

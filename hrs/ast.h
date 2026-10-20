@@ -1,9 +1,7 @@
 #pragma once
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef AST_H
+#define AST_H
 #include "lexer.h"
-#include "commands.h"
-
 #define R_ARRAY_INITIAL_SIZE 2
 #define ARG_ARRAY_INITIAL_SIZE 4
 typedef enum {
@@ -28,33 +26,33 @@ typedef struct RedirArray {
     int cur_size;
 }RedirArray; 
 
+typedef struct ArgsArray {
+    char **args_arr;
+    int args_count;
+    int args_size;
+}ArgsArray; 
+
 typedef struct ASTNode {
     ASTNodeType type;
-    char **args;               
-    int args_count;
-    RedirArray *redir; 
+    //char **args;               
+    //int args_count;
+    RedirArray *redir;
+    ArgsArray *args;
 
-    struct ASTNode *left;
+    struct ASTNode *left; // subshell тоже тут
     struct ASTNode *right;
 } ASTNode;
 
-ASTNode* parse_tokens(TokenArray *tokens);
-ASTNode* parse_list(TokenArray *tokens);
-ASTNode* parse_and_or(TokenArray *tokens);
-ASTNode* parse_pipe(TokenArray *tokens);
-ASTNode* parse_simple(TokenArray *tokens);
-
-
+//////////////////////////// AST FUNCS
 ASTNode* create_node(ASTNodeType type);
 void free_ast(ASTNode *node);
 void print_ast(ASTNode *node, int level);
-
+///////////////////////////// REDIRS
 RedirArray* create_redir_array();
 bool is_redir(TokenType type);
 RedirArray* add_redir_node(RedirArray* array, TokenType type, const char *filename);
 RedirNode* resize_redir_array(RedirNode* redir, int size);
-
-void parser_test_mode();
-
-#endif 
-    
+//////////////////////////// ARGS
+ArgsArray* create_args_array();
+char** resize_args_array(char** args, int size); 
+#endif
