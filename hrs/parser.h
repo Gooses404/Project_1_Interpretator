@@ -11,7 +11,7 @@ ASTNode* parse_list(TokenArray *tokens);
 ASTNode* parse_and_or(TokenArray *tokens);
 ASTNode* parse_pipe(TokenArray *tokens);
 ASTNode* parse_simple(TokenArray *tokens);
-
+RedirArray *parse_single_redirection(TokenArray *tokens);
 
 
 void parser_test_mode();

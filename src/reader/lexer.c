@@ -162,7 +162,7 @@ TokenArray* tokenize(char *text_of_input){
 
     quote_error:
         destroy_tokens(array);
-        write(STDERR_FILENO,"2",1);
+        write(STDERR_FILENO,"mysh: lexer: quote_error\n",strlen("mysh: lexer: quote_error\n"));
         return NULL;
 }
 char *tokenise_commment( char **current, char **start){ //TokenArray *array,int val_len,
