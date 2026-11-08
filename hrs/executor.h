@@ -6,5 +6,5 @@
 
 int read_bfs(ASTNode *ast);
 int execute_command(ASTNode *ast);
-
+int execute_node(ASTNode *ast);
 #endif

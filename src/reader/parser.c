@@ -1,20 +1,59 @@
 #include "parser.h"
 #include "ast.h"
+#include "commands.h"
 int token_array_pos = 0; // 
 int node_count = 0; // Отладка
+unsigned int parser_errno = 0; // ошибка
+bool parser_continue_state = 0; // продолжение
 ASTNode* parse_tokens(TokenArray *tokens){
-    token_array_pos = 0; 
-    ASTNode *root;    
-    
+    if(tokens == NULL){
+        return NULL;
+    }
+    ASTNode *root;       
+    token_array_pos = 0;
+    parser_errno = 0 ;
+
     root = parse_list(tokens);
-    token_array_pos++;
     
+    if(parser_errno != 0 && parser_errno != CONTINUE_ERROR){
+        if(parser_errno & EMPTY_BRACKET_ERROR){
+            write(STDERR_FILENO,"mysh: parser: empty_bracket\n",strlen("mysh: parser: empty_bracket\n"));
+        }
+        if(parser_errno & REDIR_ERROR){
+            write(STDERR_FILENO,"mysh: parser: redir_error\n",strlen("mysh: parser: redir_error\n"));
+        }
+        if(parser_errno & UNCLOSED_BRACKET_ERROR){
+            write(STDERR_FILENO,"mysh: parser: unclosed_bracket\n",strlen("mysh: parser: unclosed_bracket\n"));
+        }
+            errno = 2;
+            free_ast(root);
+            return NULL;
+            
+    }
+    if(token_array_pos < tokens->cur_index - 1){
+        fprintf(stderr,"mysh: parser: unexpected_token %s\n",GetTokenValue(tokens->head[token_array_pos].type));
+        errno = 2;
+        free_ast(root);
+        return NULL;
+    }
+    // Отлавливаем ошибку , выводим сообщение и очищеам дерево   
+    
+    if(parser_errno & CONTINUE_ERROR){
+            tokens = lexer_restart(tokens);
+            free_ast(root);
+            root = parse_tokens(tokens);
+            if(root == NULL){
+                node_count = 0;
+                return NULL;
+            }
+        }
+
     return root;
 }
 ASTNode* parse_list(TokenArray *tokens){
     ASTNode *tmp ,*node = parse_and_or(tokens);
     if (!node) return NULL;
-    while(token_array_pos < tokens->cur_index - 1 &&
+    while(token_array_pos < tokens->cur_index  &&
          (tokens->head[token_array_pos].type == TOKEN_SEQ ||
           tokens->head[token_array_pos].type == TOKEN_BG)){
             
@@ -27,6 +66,11 @@ ASTNode* parse_list(TokenArray *tokens){
             ++node_count;
             tmp->left = node;
             tmp->right = parse_and_or(tokens);
+            
+            if(parser_errno != 0){
+                    free_ast(node);
+                    return NULL;
+            }
             node = tmp;
     }
     
@@ -35,7 +79,7 @@ ASTNode* parse_list(TokenArray *tokens){
 ASTNode* parse_and_or(TokenArray *tokens) { 
     ASTNode *tmp ,*node = parse_pipe(tokens);
     if (!node) return NULL;
-    while(token_array_pos < tokens->cur_index - 1 &&
+    while(token_array_pos < tokens->cur_index &&
         ( tokens->head[token_array_pos].type == TOKEN_AND ||
           tokens->head[token_array_pos].type == TOKEN_OR)){
 
@@ -48,6 +92,14 @@ ASTNode* parse_and_or(TokenArray *tokens) {
             token_array_pos++;
             tmp->left = node;
             tmp->right = parse_pipe(tokens);
+            if(tmp->right == NULL){
+                if (parser_errno == 0 && token_array_pos >= tokens->cur_index - 1) {
+                    parser_errno |= CONTINUE_ERROR;
+                }
+                //free_ast(node);
+                free_ast(tmp);
+                return NULL;
+            }
             node = tmp;
         
     }
@@ -59,13 +111,21 @@ ASTNode* parse_and_or(TokenArray *tokens) {
 ASTNode* parse_pipe(TokenArray *tokens){
     ASTNode *tmp , *node = parse_simple(tokens);
     if (!node) return NULL;
-        while(token_array_pos < tokens->cur_index - 1 &&
+        while(token_array_pos < tokens->cur_index &&
         tokens->head[token_array_pos].type == TOKEN_PIPE){
             tmp = create_node(NODE_PIPELINE);
             ++node_count;
             token_array_pos++;
             tmp->left = node;
             tmp->right = parse_simple(tokens);
+            if(tmp->right == NULL){
+                if (parser_errno == 0 && token_array_pos >= tokens->cur_index - 1) {
+                    parser_errno |= CONTINUE_ERROR;
+                }
+                //free_ast(node);
+                free_ast(tmp);
+                return NULL;
+            }
             node = tmp;
         
     }
@@ -73,10 +133,13 @@ ASTNode* parse_pipe(TokenArray *tokens){
 }
 
 
-/* Refir - нода с типом command 
+/* Redir - нода с типом command 
 но мы различаем команду с redirlist и просто redirlist только по количеству аргументов
 */
 ASTNode* parse_simple(TokenArray *tokens){
+    if(token_array_pos >= tokens->cur_index){
+        return NULL;
+    }
     ASTNode *node ;
     if (tokens->head[token_array_pos].type == TOKEN_WORD ||
         is_redir(tokens->head[token_array_pos].type)){
@@ -84,6 +147,7 @@ ASTNode* parse_simple(TokenArray *tokens){
         node = create_node(NODE_COMMAND);
         ++node_count;
         //заполняем арг в цикле пока не встретим не слово , redir или конец массива токенов
+        //
         while ( token_array_pos < tokens->cur_index   
             &&( tokens->head[token_array_pos].type == TOKEN_WORD||
                 is_redir(tokens->head[token_array_pos].type))) {
@@ -99,31 +163,19 @@ ASTNode* parse_simple(TokenArray *tokens){
                 node->args->args_arr[node->args->args_count] = strdup(tokens->head[token_array_pos].value);
                 node->args->args_count++;
             }else{
-                if(token_array_pos + 1>= tokens->cur_index 
-                ||   tokens->head[token_array_pos + 1].type != TOKEN_WORD){
-                        write(STDERR_FILENO,"2",1);
+                node->redir = parse_single_redirection(node->redir,tokens);
+                if(node->redir == NULL){
+                        errno = 2;
+                        parser_errno |= REDIR_ERROR;
                         free_ast(node);
                         return NULL;
-                    }
-             
-                switch (tokens->head[token_array_pos].type){
-                    case TOKEN_REDIRECT_IN:
-                        node->redir = add_redir_node(node->redir,TOKEN_REDIRECT_IN,tokens->head[++token_array_pos].value);
-                        break;
-                    case TOKEN_REDIRECT_OUT:
-                        node->redir = add_redir_node(node->redir,TOKEN_REDIRECT_OUT,tokens->head[++token_array_pos].value);
-                        break;
-                    case TOKEN_REDIRECT_D_OUT:
-                        node->redir = add_redir_node(node->redir,TOKEN_REDIRECT_D_OUT,tokens->head[++token_array_pos].value);
-                        break;
-                    default:
-                        break;
                 }
             }
             
-            ++token_array_pos; 
-            
+            ++token_array_pos;
         }
+
+        /// Ставим NULL в конец если массив сущ 
         if(node->args != NULL){
             node->args->args_arr[node->args->args_count] = NULL;
         }
@@ -132,18 +184,37 @@ ASTNode* parse_simple(TokenArray *tokens){
 
     }else if(tokens->head[token_array_pos].type == TOKEN_OPEN_BRACKET){
         token_array_pos++; // Пропуск (
-    
         node = create_node(NODE_SUBSHELL);
         ++node_count;
         node->left = parse_list(tokens); // subshell идет в left
-                                        // Рекурсивно парсим содержимое скобок
-        if (tokens->head[token_array_pos].type == TOKEN_CLOSE_BRACKET) {
-            token_array_pos++;     // Пропуск )
-        } else {
-            // Обработка ошибки: ожидается закрывающая скобка
-            fprintf(stderr, "Error: Expected closing bracket\n");
+        if(node->left == NULL){
+            errno = 2;
+            parser_errno |= EMPTY_BRACKET_ERROR;
+            token_array_pos++; // Чтобы не вызывался unexpected token
             free_ast(node);
             return NULL;
+        }
+       // token_array_pos++; 
+       // printf("TOKEN NOW %s\n",GetTokenValue(tokens->head[token_array_pos].type));
+        if( tokens->head[token_array_pos].type != TOKEN_CLOSE_BRACKET){
+            errno = 2;
+            parser_errno |= UNCLOSED_BRACKET_ERROR;
+            free_ast(node);
+            return NULL;
+            
+        }
+        token_array_pos++; // Пропуск )
+        // redir могут быть только после скобок
+        while( token_array_pos < tokens->cur_index && is_redir(tokens->head[token_array_pos].type)){
+            node->redir = parse_single_redirection(node->redir,tokens);
+            if(node->redir == NULL){
+                errno = 2;
+                parser_errno |= REDIR_ERROR;
+                free_ast(node);
+                return NULL;
+            }
+            ++token_array_pos;
+
         }
         return node;
     }
@@ -188,6 +259,27 @@ RedirArray* add_redir_node(RedirArray* array, TokenType type, const char *filena
     }
     
     return array;
+}
+RedirArray *parse_single_redirection(RedirArray *redir,TokenArray *tokens){
+    if(token_array_pos + 1 >= tokens->cur_index 
+    ||  tokens->head[token_array_pos + 1].type != TOKEN_WORD){
+            return NULL;
+        }
+    
+    switch (tokens->head[token_array_pos].type){
+        case TOKEN_REDIRECT_IN:
+            return add_redir_node(redir,TOKEN_REDIRECT_IN,tokens->head[++token_array_pos].value);
+            break;
+        case TOKEN_REDIRECT_OUT:
+            return add_redir_node(redir,TOKEN_REDIRECT_OUT,tokens->head[++token_array_pos].value);
+            break;
+        case TOKEN_REDIRECT_D_OUT:
+            return add_redir_node(redir,TOKEN_REDIRECT_D_OUT,tokens->head[++token_array_pos].value);
+            break;
+        default:
+            break;
+    }
+    return NULL;
 }
 
 
@@ -270,7 +362,18 @@ void print_ast(ASTNode *node, int level) {
             printf("BG\n");
             break;
         case NODE_SUBSHELL:
-            printf("SUBSHELL\n");
+            printf("SUBSHELL");
+            if(node->redir == NULL){
+                printf("\n");
+                break;
+            }
+            printf(": ");
+
+            for (int i = 0; i < node->redir->cur_index; i++) {
+                printf("redir %d: %s ",node->redir->head[i].type, node->redir->head[i].filename);
+            }
+            printf("\n");
+            
             break;
     }
 
@@ -322,5 +425,5 @@ void parser_test_mode(){
     printf("Node count: %d\n",node_count);
     node_count = 0;
     free_ast(root);
-    destroy_tokens(head);
+    free_tokens(head);
 }

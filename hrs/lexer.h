@@ -14,7 +14,8 @@ typedef enum TokenType{
     TOKEN_REDIRECT_D_OUT,   
     TOKEN_REDIRECT_OUT, 
     TOKEN_OPEN_BRACKET,  
-    TOKEN_CLOSE_BRACKET,  
+    TOKEN_CLOSE_BRACKET,
+    TOKEN_NEWLINE,  
 } TokenType;
 
 
@@ -38,7 +39,7 @@ typedef struct Token {
 
 typedef struct TokenArray {
     Token *head;
-    int cur_index;
+    int cur_index; //после tokenise показывает количесто токенов а не индекс(либо индекс следующего элемента)
     int cur_size;
 }TokenArray; 
 
@@ -48,19 +49,22 @@ bool check_meta(unsigned char c);
 TokenArray *CreateTokenArray();
 void print_tokens(TokenArray *head);
 TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int value_length);
-void destroy_tokens(TokenArray *list);
+void free_tokens(TokenArray *list);
 
 
 TokenArray* tokenize(char *text_of_input);
 char *tokenise_commment(char **current, char **start);
 int tokenise_single_quote(char **current);
 int tokenise_double_quote(char **current);
-
 char *strncpy_no_quotes(const char *old_value, int old_value_lenght);
 
 const char* GetTokenType(TokenType state);
 const char *GetTokenValue(TokenType state);
 
 Token* Resize_Token_Array(Token* token, int size);
+// сливает второй массив токенов в первый
+TokenArray*  merge_token_arrs(TokenArray *arr1,TokenArray *arr2);
+
+TokenArray*  lexer_restart(TokenArray *old_head);
 TokenArray * lexer_test_mode();
 #endif

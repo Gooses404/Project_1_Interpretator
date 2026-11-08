@@ -21,6 +21,7 @@ bool check_meta(unsigned char c) {
 }
 
 TokenArray* tokenize(char *text_of_input){
+start_of_tokenize:
     if(text_of_input == NULL){
         return NULL;
     }
@@ -35,21 +36,7 @@ TokenArray* tokenize(char *text_of_input){
         if((check_meta(*start)) && start < current ){ /// Ставаит start на начало след слова или спец символа,
             start = current;                            // если start был спецсивмолом, а current уже не спецсимвол
         }
-        if (*current == '#' && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
-            tokenise_commment(&current, &start); 
-        }
-        if(*current == '\''){
-            if(tokenise_single_quote(&current) == -1){
-                goto quote_error;   
-            }
-        }else if(*current == '"'){
-            if(tokenise_double_quote(&current) == -1){ 
-                goto quote_error;
-        }
-
-        }else if(*current == '\\'){
-            state = IN_BACKSLASH;
-        }else if(state == IN_BACKSLASH){
+        if(state == IN_BACKSLASH){
             state = NORMAL;
             if(*(current + 1) == '\0'){
                 array = AddToken(array, TOKEN_WORD, start, current - start +1);
@@ -58,7 +45,21 @@ TokenArray* tokenize(char *text_of_input){
             }else{
                 is_skiped = true;
             }
-        }       
+        }else if (*current == '#' && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
+                tokenise_commment(&current, &start); 
+        
+        }else if(*current == '\''){
+            if(tokenise_single_quote(&current) == -1){
+                goto quote_error;   
+            }
+        }else if(*current == '"'){
+            if(tokenise_double_quote(&current) == -1){ 
+                goto quote_error;
+            }
+
+        }else if(*current == '\\'){
+            state = IN_BACKSLASH;
+        }    
     if(!is_skiped)
     {    
         if(check_meta(*current) || *(current + 1 ) =='\0' ) // Должны запушить что нибудь               //*current ==' ' || *current == '\t' || *current == '\n' 
@@ -161,9 +162,19 @@ TokenArray* tokenize(char *text_of_input){
     return array;
 
     quote_error:
-        destroy_tokens(array);
-        write(STDERR_FILENO,"mysh: lexer: quote_error\n",strlen("mysh: lexer: quote_error\n"));
-        return NULL;
+        //если в интерактивном режиме то не падаем
+        if(config.interactive){
+            write(STDOUT_FILENO,"> ", 2);
+            text_of_input = merge_input_strings(text_of_input , read_input(0));
+            if (text_of_input == NULL) {
+                exit(0);                    // EOF \Ctrl-D 
+            }
+            goto start_of_tokenize;
+        }else{
+            free_tokens(array);
+            write(STDERR_FILENO,"mysh: lexer: quote_error\n",strlen("mysh: lexer: quote_error\n"));
+            return NULL;
+        }
 }
 char *tokenise_commment( char **current, char **start){ //TokenArray *array,int val_len,
     *start = *current;
@@ -187,7 +198,7 @@ int tokenise_single_quote(char **current){
 int tokenise_double_quote(char **current){
     ++*current;
     while(*(*current + 1) != '\0' && **current != '"'){    
-        if(**current == '\\' && *(*current + 1) == '"'){ // если встретили \", то пропускаем \ и продолжаем т.е пропуск "
+        if(**current == '\\' && (*(*current + 1) == '"' ||*(*current + 1) == '\\')){ // если встретили \", то пропускаем \ и продолжаем т.е пропуск "
             ++*current;
         } 
         ++*current;
@@ -249,7 +260,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
     
     return arr;
 }
-void destroy_tokens(TokenArray *list){ 
+void free_tokens(TokenArray *list){ 
     if (list == NULL) {
         return;
     }
@@ -376,11 +387,47 @@ Token* Resize_Token_Array(Token* token, int size){
     }
     return new_arr;
 }
+TokenArray* merge_token_arrs(TokenArray *arr1, TokenArray *arr2){
+    if(arr1 == NULL || arr2 == NULL ){
+        return NULL ;
+    }
+    // расширяем массив если нужно
+    while(arr1->cur_size < arr1->cur_index + arr2->cur_index){
+        arr1->cur_size *= 2;
+        arr1->head = Resize_Token_Array(arr1->head, arr1->cur_size);
+    }
+    // добавляем в первый начиная с последнего 
+    for(int i = arr1->cur_index , j = 0; j < arr2->cur_index; ++i ,++j){
+        arr1->head[i] = arr2->head[j];
+        arr2->head[j].value = NULL;  // чтобы при free не удалились 
+    }
+    arr1->cur_index += arr2->cur_index; 
+    free_tokens(arr2);
+    return arr1 ;
+}
 
+TokenArray* lexer_restart(TokenArray* old_head){
+        char *text_of_input ;
+        TokenArray* head;
+        write(STDOUT_FILENO,"> ", 2);
+        text_of_input = read_input(0);
+        if (text_of_input == NULL) {
+            exit(0);                    // EOF \Ctrl-D 
+        }
+        head = tokenize(text_of_input);
+        free(text_of_input);
+        // Убираем ; в конце предыдущего массива так как функция только для операций требующих 2 опреанда
+        --old_head->cur_index; //затрем следующим вводом 
+        old_head = merge_token_arrs(old_head, head);
+        print_tokens(old_head);
+        return old_head;
+        // destroy_tokens(head);
+}
 TokenArray* lexer_test_mode(){
         char *text_of_input ;
         TokenArray* head;
         printf("START_OF_PROGRAMM\n");
+        printf("Start of reading\n");
         text_of_input = read_input(0);
         if (text_of_input == NULL) {
             exit(0);                    // EOF \Ctrl-D 

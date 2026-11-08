@@ -1,17 +1,18 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
 #include "commands.h"
 #include "lexer.h"
 #include "parser.h"
+#include "ast.h"
+#include "signals.h"
 
 #define SHELL_NAME "mysh"
 
 
 int main(int argc, char* argv[]) {
-    ShellConfig config;
+    
+    config.interactive = true;
+    config.dump_tokens = false;
+    config.dump_ast = false;
+
     for (int i = 1; i < argc; ++i) {
     if (strcmp(argv[i], "--dump-tokens") == 0) {
         config.dump_tokens = true;
@@ -22,31 +23,38 @@ int main(int argc, char* argv[]) {
         config.interactive = false;
     }
 }
+    //struct sigaction si;
 
-    //int bytes_read = 0 ,size_of_text_of_input = 100;
-    //char *text_of_input ;
-    //Token* head;
+    // sa.sa_handler = sigint_handler; 
+    // sigemptyset(&sa.sa_mask);     
+    // sa.sa_flags = SA_RESTART;
+    // if (sigaction(SIGINT, NULL, NULL) == -1) {
+    //     perror("Ошибка sigaction");
+    //     return 1;
+    // }
+    TokenArray *head;
+    ASTNode *root;
+    char *text_of_input ;
+   
     while(1){    // global loop for reading input
-        
-        
-        
-        
-        
-        
+        free_tokens(head);
+        text_of_input = read_input(0);
+        if (text_of_input == NULL) {
+            exit(0);                    // EOF \Ctrl-D 
+        }
+        head = tokenize(text_of_input);
+        free(text_of_input);
+                
         if(config.dump_tokens){
-            
+            print_tokens(head);
         }
+        root = parse_tokens(head);
         if(config.dump_ast){
-            
+            print_ast(root, 0);
         }
-        // printf("START_OF_PROGRAMM\n");
-        // text_of_input = read_input();
-        // head = tokenize(text_of_input);
-        // print_tokens(head);
-        // destroy_tokens(head);
-        
-        //lexer_test_mode();
-        parser_test_mode();
+        free(head);
+        free_ast(root);
+
      //   execl("commads_list/myth_echo.c", "a", "b" ,NULL);
     }
     
