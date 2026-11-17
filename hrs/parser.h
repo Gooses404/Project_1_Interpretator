@@ -5,10 +5,12 @@
 #include "commands.h"
 #include "ast.h"
 
-#define REDIR_ERROR 0b0001
-#define EMPTY_BRACKET_ERROR 0b0010
-#define UNCLOSED_BRACKET_ERROR 0b0100
-#define CONTINUE_ERROR 0b1000
+#define REDIR_ERROR 0b00001
+#define EMPTY_BRACKET_ERROR 0b00010
+#define UNCLOSED_BRACKET_ERROR 0b00100
+#define CONTINUE_ERROR 0b01000
+#define UNEXPECTED_EOF_ERROR  0b10000
+
 
 
 ASTNode* parse_tokens(TokenArray *tokens);

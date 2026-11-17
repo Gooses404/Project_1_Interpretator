@@ -11,12 +11,12 @@ int myth_echo(char **argv){
     // 00000000
     // 0:-n
     int i = 1;
-    while(argv[i] != NULL){
-        if (strcmp(argv[i], "-n") == 0) {
+    if (strcmp(argv[i], "-n") == 0) {
             flags |= FLAG_N;
             ++i;
-            continue;
         }
+    while(argv[i] != NULL){
+        
         
         write(STDOUT_FILENO,argv[i],strlen(argv[i]));
         if(argv[i + 1] != NULL){

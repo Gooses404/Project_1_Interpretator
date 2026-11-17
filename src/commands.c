@@ -22,11 +22,10 @@ char* read_input(int fd){
         fprintf(stderr, "Memory allocation failed\n");
         exit(1);
     }
-    bool is_backslash = false;
-    bool is_single_quote = false;
     
         while(1){    // по одному
-        if(buf_pos >= res){
+        // читаем новое только если предыдущий buf уже полностью обработан
+        if(buf_pos >= res){ 
             buf_pos = 0;
             res = read(fd, buf, SIZE_OF_BUF);
         }
@@ -50,44 +49,17 @@ char* read_input(int fd){
             break;
         }
         // buf pos всегда на следующем к концу цикла
-        while( buf_pos < res){
+        while(buf_pos < res){
             // проверка размера
-            if(bytes_read >= size_of_text_of_input - 2){
+            if(bytes_read >= size_of_text_of_input - 3){
                 size_of_text_of_input *= 2;
                 text_of_input = Resize_char(text_of_input, size_of_text_of_input);
             }
-            
-            
-            if(is_backslash ){
-                if(buf[buf_pos] != '\n'){ // записываем \ только на следующей итерации
-                    text_of_input[bytes_read++] = '\\';
-                    if(buf[buf_pos] == '\\'){ // если двойной то записываем оба
-                        text_of_input[bytes_read++] = '\\';
-                        is_backslash = false;
-                        ++buf_pos;
-                        continue;
-                    }
-                }
-                if((buf[buf_pos] == '\n') ){ // не записываем \n в случае is_backslash = true ; пока не пишем бэкслэш
-                    write(STDOUT_FILENO,">",1);
-                    ++buf_pos;
-                    continue;
-                }
-                is_backslash = false;
-            }else{
-                if(buf[buf_pos] == '\n' ){  // выход 
-                    text_of_input[bytes_read++] = buf[buf_pos++];
-                    goto out_of_loop;
-                }else if(buf[buf_pos] == '\\'){
-                    is_backslash = true; // возможность продолжить команду 
-
-                }
-            }
-        if(buf[buf_pos] != '\\'){
             text_of_input[bytes_read++] = buf[buf_pos];
-        }
-        ++buf_pos;
-            
+            if(buf[buf_pos++] == '\n' ){  // выход 
+                goto out_of_loop;
+            }
+        
         }
         
     }
@@ -98,14 +70,6 @@ char* read_input(int fd){
 
 }
 
-void reader_test_mode() {
-    char *text_of_input = read_input(0);
-    if (text_of_input == NULL) {
-        exit(0); // Безопасный выход при EOF / Ctrl+D
-    }
-    printf("text_of_input: '%s'\nlen: %zu\n", text_of_input, strlen(text_of_input));
-    free(text_of_input);
-}
 
 char* merge_input_strings(char* s1, char* s2) {
     if (!s1 || !s2) {
@@ -122,4 +86,12 @@ char* merge_input_strings(char* s1, char* s2) {
     memcpy(s3 + n1, s2, n2 + 1); // сохраняем \n в конце s1
     free(s2);
     return s3;
+}
+void reader_test_mode() {
+    char *text_of_input = read_input(0);
+    if (text_of_input == NULL) {
+        exit(0); // Безопасный выход при EOF / Ctrl+D
+    }
+    printf("text_of_input: '%s'\nlen: %zu\n", text_of_input, strlen(text_of_input));
+    free(text_of_input);
 }

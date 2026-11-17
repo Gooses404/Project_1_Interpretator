@@ -52,7 +52,7 @@ TokenArray* AddToken(TokenArray *arr, TokenType type, const char *value, int val
 void free_tokens(TokenArray *list);
 
 
-TokenArray* tokenize(char *text_of_input);
+TokenArray* tokenize(char **text_of_input);
 char *tokenise_commment(char **current, char **start);
 int tokenise_single_quote(char **current);
 int tokenise_double_quote(char **current);

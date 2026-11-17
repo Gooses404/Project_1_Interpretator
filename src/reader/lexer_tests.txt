@@ -1,4 +1,4 @@
-a | b
+echo | b
 ls
 ls|wc
 ls|wc && cat

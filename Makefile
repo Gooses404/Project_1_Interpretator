@@ -28,6 +28,7 @@ $(TARGET): $(OBJS)
 
 run: $(TARGET)
 	./$(TARGET)
-
+testrun: $(TARGET)
+	./$(TARGET) --dump-ast --dump-tokens
 clean:
 	rm -f $(OBJS) $(TARGET)
