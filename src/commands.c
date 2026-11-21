@@ -95,3 +95,7 @@ void reader_test_mode() {
     printf("text_of_input: '%s'\nlen: %zu\n", text_of_input, strlen(text_of_input));
     free(text_of_input);
 }
+
+// void myth_print_error(int errnum){
+//     fprintf(stderr, "mysh: executor: Unknown AST node type: %d\n");
+//}

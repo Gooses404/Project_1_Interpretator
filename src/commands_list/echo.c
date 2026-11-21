@@ -5,19 +5,18 @@
 
 int myth_echo(char **argv){
     if (!argv || !argv[0]) {
-        return 0;
+        return 1;
     }
     unsigned char flags = 0;
     // 00000000
     // 0:-n
     int i = 1;
-    if (strcmp(argv[i], "-n") == 0) {
+    if (argv[i] != NULL && strcmp(argv[i], "-n") == 0) {
             flags |= FLAG_N;
             ++i;
         }
     while(argv[i] != NULL){
-        
-        
+
         write(STDOUT_FILENO,argv[i],strlen(argv[i]));
         if(argv[i + 1] != NULL){
             write(STDOUT_FILENO," ",1);

@@ -6,7 +6,11 @@ SRCS = src/main.c \
        src/commands.c \
        src/reader/lexer.c \
        src/reader/parser.c \
-	   src/commands_list/echo.c
+       src/executor.c \
+	   src/commands_list/echo.c\
+	   src/commands_list/exit.c\
+	   src/commands_list/cd.c\
+	   src/commands_list/pwd.c\
 
 OBJS = $(SRCS:.c=.o)
 

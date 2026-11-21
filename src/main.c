@@ -3,12 +3,13 @@
 #include "parser.h"
 #include "ast.h"
 #include "signals.h"    
+#include "executor.h"    
 
 #define SHELL_NAME "mysh"
 
 ShellConfig config = { .interactive = true, .dump_tokens = false, .dump_ast = false, .command_str = NULL };     
 int main(int argc, char* argv[]) {
-    
+    char dir[PATH_MAX];
     config.interactive = isatty(STDIN_FILENO);
     config.dump_tokens = false;
     config.dump_ast = false;
@@ -27,8 +28,18 @@ int main(int argc, char* argv[]) {
     TokenArray *head = NULL;
     ASTNode *root = NULL;
     char *text_of_input ;
-    
+
     while(1){    // global loop for reading input
+        if(config.interactive){
+            write(STDOUT_FILENO,"myth:",5);
+            if (getcwd(dir, sizeof(dir)) != NULL) {
+                write(STDOUT_FILENO,dir, strlen(dir));
+                write(STDOUT_FILENO,"$ ", 2);
+             } else {
+                return 1;
+    }
+
+        }
         config.last_status = 0;
         if(config.command_str){
             text_of_input = strdup(config.command_str);
@@ -66,16 +77,17 @@ int main(int argc, char* argv[]) {
         if(config.dump_ast){
             print_ast(root, 0);
         }
+        executer(root);
+
         free_ast(root);
 
-        
+
 
 
 
         if(config.command_str){
             return config.last_status;    
         }
-     //   execl("commads_list/myth_echo.c", "a", "b" ,NULL);
     }
 
     return 0;   

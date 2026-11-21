@@ -274,8 +274,7 @@ char *tokenise_commment( char **current, char **start){ //TokenArray *array,int 
     while(*(*current + 1) != '\0' && **current != '\n'){
         ++*current;
     }
-    if(*(*current + 1) == '\0' && *(*current + 1) != '\n'){
-        
+    if(*(*current + 1) == '\0' && **current != '\n'){
         return NULL;
     }
     *start = *current;
