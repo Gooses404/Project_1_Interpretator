@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     config.interactive = isatty(STDIN_FILENO);
     config.dump_tokens = false;
     config.dump_ast = false;
-    config.last_status = 0;
+    config.shell_status = 0;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--dump-tokens") == 0) {
@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
     TokenArray *head = NULL;
     ASTNode *root = NULL;
     char *text_of_input ;
+    int res;
 
     while(1){    // global loop for reading input
         if(config.interactive){
@@ -35,12 +36,12 @@ int main(int argc, char* argv[]) {
             if (getcwd(dir, sizeof(dir)) != NULL) {
                 write(STDOUT_FILENO,dir, strlen(dir));
                 write(STDOUT_FILENO,"$ ", 2);
-             } else {
+            }else {
                 return 1;
-    }
+            }
 
         }
-        config.last_status = 0;
+        config.shell_status = 0;
         if(config.command_str){
             text_of_input = strdup(config.command_str);
         }else{
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (text_of_input == NULL) {
+            config.last_status = 2;
             exit(config.last_status);                    // EOF \Ctrl-D         
         }
         head = tokenize(&text_of_input);
@@ -58,7 +60,7 @@ int main(int argc, char* argv[]) {
             if(config.interactive){
                 continue;
             }
-            if(config.last_status == 2)
+            if(config.shell_status == 2)
                 exit(2);
         }
         if(config.dump_tokens){
@@ -68,23 +70,24 @@ int main(int argc, char* argv[]) {
         root = parse_tokens(head);
         free_tokens(head);
         if(root == NULL){
-            if(config.interactive){
+            if(config.interactive)
                 continue;
-            }
-            if(config.last_status == 2)
+            
+            if(config.shell_status == 2)
                 exit(2);
         }
         if(config.dump_ast){
             print_ast(root, 0);
+            //continue; //без exec по тз
         }
-        executer(root);
-
+        res = executer(root);
         free_ast(root);
-
-
-
-
-
+        
+        if(config.shell_status == 3)
+            exit(3);
+        
+            config.last_status = res;
+        
         if(config.command_str){
             return config.last_status;    
         }

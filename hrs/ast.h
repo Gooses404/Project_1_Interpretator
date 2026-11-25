@@ -45,8 +45,10 @@ typedef struct ASTNode {
 
 //////////////////////////// AST FUNCS
 ASTNode* create_node(ASTNodeType type);
+ASTNode** resize_node_array(ASTNode **node, int size); //для пайпов
 void free_ast(ASTNode *node);
 void print_ast(ASTNode *node, int level);
+char *ast_to_command(ASTNode *node);
 ///////////////////////////// REDIRS
 RedirArray* create_redir_array();
 bool is_redir(TokenType type);
@@ -55,4 +57,5 @@ RedirNode* resize_redir_array(RedirNode* redir, int size);
 //////////////////////////// ARGS
 ArgsArray* create_args_array();
 char** resize_args_array(char** args, int size); 
+
 #endif

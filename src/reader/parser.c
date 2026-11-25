@@ -30,7 +30,7 @@ ASTNode* parse_tokens(TokenArray *tokens){
         }
             errno = 2;
             free_ast(root);
-            config.last_status = 2;
+            config.shell_status = 2;
             return NULL;
             
     }
@@ -42,7 +42,7 @@ ASTNode* parse_tokens(TokenArray *tokens){
     if(token_array_pos != tokens->cur_index){
         fprintf(stderr,"mysh: parser: unexpected_token %s\n",GetTokenValue(tokens->head[token_array_pos].type));
         errno = 2;
-        config.last_status = 2;
+        config.shell_status = 2;
         free_ast(root);
         return NULL;
     }
@@ -449,6 +449,15 @@ void free_ast(ASTNode *node){
     free(node);
 }
 
+ASTNode** resize_node_array(ASTNode **arr, int size){ //для пайпов
+    ASTNode** new_arr = (ASTNode**)realloc(arr, size * sizeof(ASTNode*));
+    if (new_arr == NULL) {    
+        free(arr);
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+    return new_arr;
+} 
 
 
 void parser_test_mode(){
@@ -461,4 +470,7 @@ void parser_test_mode(){
     node_count = 0;
     free_ast(root);
     free_tokens(head);
+}
+char *ast_to_command(ASTNode *node){
+    
 }

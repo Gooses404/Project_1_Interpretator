@@ -52,7 +52,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
                     tmp_text = read_input(0);
                     if(!tmp_text){ //EOF
                         errno = 2;
-                        config.last_status = 2;
+                        config.shell_status = 2;
                         if(config.interactive){
                             write(STDERR_FILENO,"mysh: lexer: unexpected EOF\n",strlen("mysh: lexer: unexpected EOF\n"));
                             return NULL;
@@ -63,7 +63,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
                     *text_of_input_ptr = merge_input_strings(*text_of_input_ptr , tmp_text);
                     if (*text_of_input_ptr == NULL) {
                         errno = 2;
-                        config.last_status = 2;
+                        config.shell_status = 2;
                         if(config.interactive){
                             write(STDERR_FILENO,"mysh: lexer: allocation error\n",strlen("mysh: lexer: allocation error\n"));
                             return NULL;
@@ -90,7 +90,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
             }
         }else if (*current == '#' && ( current == start || check_meta(*(current - 1)))){ // проверка что в начале слова
             tokenise_commment(&current, &start); 
-            if(*(current + 1 ) =='\0' ){
+            if(*(current + 1 ) == '\0' ){
                 ++current;
                 continue;
             }
@@ -224,7 +224,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
         free_tokens(array); 
         if(!tmp_text){ //EOF
             errno = 2;
-            config.last_status = 2;
+            config.shell_status = 2;
             if(config.interactive){
                 write(STDERR_FILENO,"mysh: lexer: unexpected EOF\n",strlen("mysh: lexer: unexpected EOF\n"));
                 return NULL;
@@ -233,7 +233,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
         }
         *text_of_input_ptr = merge_input_strings(*text_of_input_ptr , tmp_text);
         if (*text_of_input_ptr == NULL) {
-            config.last_status = 2;
+            config.shell_status = 2;
             errno = 2;
             return NULL;                    // EOF \Ctrl-D 
         }
@@ -248,14 +248,14 @@ TokenArray* tokenize(char **text_of_input_ptr){
             tmp_text = read_input(0);
             if(!tmp_text){ //EOF
                 errno = 2;
-                config.last_status = 2;
+                config.shell_status = 2;
                 write(STDERR_FILENO,"mysh: lexer: unexpected EOF\n",strlen("mysh: lexer: unexpected EOF\n"));
                 return NULL;
             }
             *text_of_input_ptr = merge_input_strings(*text_of_input_ptr , tmp_text);
 
             if (*text_of_input_ptr == NULL) {
-                config.last_status = 2;
+                config.shell_status = 2;
                 errno = 2;
                 //если читаем с файла то сразу ошибка
                 write(STDERR_FILENO,"mysh: lexer: quote_error\n",strlen("mysh: lexer: quote_error\n"));
@@ -263,7 +263,7 @@ TokenArray* tokenize(char **text_of_input_ptr){
             }
             goto start_of_tokenize;
         }else{
-            config.last_status = 2;
+            config.shell_status = 2;
             free_tokens(array);
             write(STDERR_FILENO,"mysh: lexer: quote_error\n",strlen("mysh: lexer: quote_error\n"));
             return NULL;
@@ -529,7 +529,7 @@ TokenArray* lexer_restart(TokenArray* old_head){
         
         if (text_of_input == NULL) {
             errno = 2;
-            config.last_status = 2;
+            config.shell_status = 2;
             //free_tokens(old_head);
             write(STDERR_FILENO,"mysh: lexer: unexpected EOF\n",strlen("mysh: lexer: unexpected EOF\n"));
             return NULL;            

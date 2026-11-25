@@ -15,8 +15,8 @@ typedef struct {
     bool interactive;       
     bool dump_tokens;         
     bool dump_ast;    
-    int last_status; 
-    int syntax_error;       
+    int shell_status;
+    int last_status;
     const char *command_str;
 } ShellConfig;
 extern ShellConfig config;
